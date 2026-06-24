@@ -1,13 +1,14 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import LanguageChart from "./components/LanguageChart";
-
+import ContributionChart from "./components/ContributionChart";
 
 function App() {
  const [username, setUsername] = useState("");
 const [user, setUser] = useState(null);
 const [loading, setLoading] = useState(false);
 const [error, setError] = useState("");
+const [contributions, setContributions] = useState({});
 
 const [stats, setStats] = useState({
   commits: 0,
@@ -17,6 +18,7 @@ const [stats, setStats] = useState({
 });
 
 const [languages, setLanguages] = useState({});
+const [repos, setRepos] = useState([]);
 
 const [displayStats, setDisplayStats] = useState({
   commits: 0,
@@ -43,6 +45,7 @@ const [displayStats, setDisplayStats] = useState({
       `http://localhost:5000/api/repos/${username}`
     );
 
+    setRepos(reposResponse.data.repos);
     
 
 const languageCount = {};
@@ -64,6 +67,11 @@ const commitsResponse = await axios.get(
   `http://localhost:5000/api/commits/${username}`
 );
 
+const contributionResponse = await axios.get(
+  `http://localhost:5000/api/contributions/${username}`
+);
+
+setContributions(contributionResponse.data);
 
 
    setStats(prev => ({
@@ -108,6 +116,8 @@ useEffect(() => {
   return () => clearInterval(interval);
 
 }, [stats]);
+
+
 
 
   return (
@@ -200,6 +210,47 @@ useEffect(() => {
 
 </div>
        <LanguageChart languages={languages} />
+
+       <div className="mt-10 w-full max-w-5xl">
+  <h2 className="text-3xl font-bold mb-4">
+    Repositories
+  </h2>
+
+  <div className="grid md:grid-cols-2 gap-4">
+
+    {repos.map((repo) => (
+      <div
+        key={repo.name}
+        className="bg-white p-4 rounded-lg shadow"
+      >
+        <h3 className="font-bold text-xl">
+          {repo.name}
+        </h3>
+
+        <p className="text-gray-600 mt-2">
+  {repo.description || "No description available"}
+</p>
+
+        <p>{repo.language}</p>
+
+        <p>⭐ {repo.stars}</p>
+
+        <a
+          href={repo.url}
+          target="_blank"
+          rel="noreferrer"
+          className="text-blue-500"
+        >
+          View Repository
+        </a>
+      </div>
+    ))}
+
+   
+
+  </div>
+   <ContributionChart contributions={contributions} />
+</div>
       </div>
     </div>
   );

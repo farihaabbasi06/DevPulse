@@ -98,14 +98,15 @@ app.get("/api/repos/:username", async (req, res) => {
                 );
 
                 return {
-                    name: repo.name,
-                    full_name: repo.full_name,
-                    stars: repo.stargazers_count,
-                    forks: repo.forks_count,
-                    language: repo.language,
-                    languages: Object.keys(langRes.data),
-                    url: repo.html_url
-                };
+    name: repo.name,
+    description: repo.description,
+    full_name: repo.full_name,
+    stars: repo.stargazers_count,
+    forks: repo.forks_count,
+    language: repo.language,
+    languages: Object.keys(langRes.data),
+    url: repo.html_url
+};
             })
         );
 
@@ -280,6 +281,76 @@ app.get("/api/pullrequests/:username", async (req, res) => {
             error: error.message
         });
     }
+});
+
+app.get("/api/contributions/:username", async (req, res) => {
+  try {
+    const username = req.params.username;
+
+    const query = {
+      query: `
+      {
+        user(login: "${username}") {
+          contributionsCollection {
+            contributionCalendar {
+              weeks {
+                contributionDays {
+                  contributionCount
+                  date
+                }
+              }
+            }
+          }
+        }
+      }
+      `
+    };
+
+    const response = await axios.post(
+      "https://api.github.com/graphql",
+      query,
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.GITHUB_TOKEN}`
+        }
+      }
+    );
+
+    const monthlyData = {
+      Jan: 0,
+      Feb: 0,
+      Mar: 0,
+      Apr: 0,
+      May: 0,
+      Jun: 0
+    };
+
+    const weeks =
+      response.data.data.user.contributionsCollection
+        .contributionCalendar.weeks;
+
+    weeks.forEach((week) => {
+      week.contributionDays.forEach((day) => {
+
+        const month = new Date(day.date)
+          .toLocaleString("default", {
+            month: "short"
+          });
+
+        if (monthlyData[month] !== undefined) {
+          monthlyData[month] += day.contributionCount;
+        }
+
+      });
+    });
+
+    res.json(monthlyData);
+
+  } catch (error) {
+    res.status(500).json({
+      error: error.message
+    });
+  }
 });
 
 // Start server
