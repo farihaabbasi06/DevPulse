@@ -13,6 +13,7 @@ const [user, setUser] = useState(null);
 const [loading, setLoading] = useState(false);
 const [error, setError] = useState("");
 const [contributions, setContributions] = useState({});
+const [cardTheme, setCardTheme] = useState("pink");
 
 const [stats, setStats] = useState({
   commits: 0,
@@ -244,10 +245,37 @@ useEffect(() => {
        
       </div>
     )}
-     <DevCard
+
+    <div className="flex justify-center gap-3 mb-4">
+
+  <button
+    onClick={() => setCardTheme("pink")}
+    className="bg-pink-500 px-4 py-2 rounded"
+  >
+    Pink
+  </button>
+
+  <button
+    onClick={() => setCardTheme("navy")}
+    className="bg-blue-900 px-4 py-2 rounded"
+  >
+    Navy
+  </button>
+
+  <button
+    onClick={() => setCardTheme("purple")}
+    className="bg-purple-700 px-4 py-2 rounded"
+  >
+    Purple
+  </button>
+
+</div>
+
+    <DevCard
   user={user}
   stats={stats}
   languages={languages}
+  theme={cardTheme}
 />
 
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mt-8 w-full max-w-5xl px-4">
