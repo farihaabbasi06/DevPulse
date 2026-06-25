@@ -1,4 +1,4 @@
-function DevCard({ user, stats }) {
+function DevCard({ user, stats, languages }) {
   return (
     <div className="bg-gray-900 border border-pink-500 p-6 rounded-xl w-full max-w-md">
 
@@ -51,7 +51,24 @@ function DevCard({ user, stats }) {
     <p className="text-pink-400">⭐ Stars</p>
     <p className="font-bold">{stats?.stars}</p>
   </div>
+    
+    <h3 className="mt-6 mb-3 text-center font-bold text-pink-400">
+  Top Languages
+</h3>
+<div className="flex flex-wrap justify-center gap-2">
 
+  {Object.keys(languages || {})
+    .slice(0, 5)
+    .map((lang) => (
+      <span
+        key={lang}
+        className="px-3 py-1 bg-pink-500 text-white rounded-full text-sm"
+      >
+        {lang}
+      </span>
+    ))}
+
+</div>
 </div>
 
     </div>

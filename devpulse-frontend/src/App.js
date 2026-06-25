@@ -244,9 +244,10 @@ useEffect(() => {
        
       </div>
     )}
-      <DevCard
+     <DevCard
   user={user}
   stats={stats}
+  languages={languages}
 />
 
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mt-8 w-full max-w-5xl px-4">
