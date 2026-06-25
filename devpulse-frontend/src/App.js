@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import LanguageChart from "./components/LanguageChart";
 import ContributionChart from "./components/ContributionChart";
+import ScoreRing from "./components/ScoreRing";
 
 
 function App() {
@@ -273,6 +274,10 @@ useEffect(() => {
     </div>
 
     <LanguageChart languages={languages} />
+
+    <div className="mt-10 flex justify-center">
+  <ScoreRing />
+</div>
 
     <div className="mt-10 w-full max-w-5xl">
 
