@@ -4,6 +4,12 @@ import LanguageChart from "./components/LanguageChart";
 import ContributionChart from "./components/ContributionChart";
 import ScoreRing from "./components/ScoreRing";
 import DevCard from "./components/DevCard";
+import {
+  BrowserRouter,
+  Routes,
+  Route
+} from "react-router-dom";
+import ProfilePage from "./pages/ProfilePage";
 
 
 function App() {
@@ -134,7 +140,16 @@ useEffect(() => {
 
 
   return (
-    <div className="min-h-screen bg-black text-white">
+
+     <BrowserRouter>
+
+    <Routes>
+
+      <Route
+        path="/"
+        element={
+          
+           <div className="min-h-screen bg-black text-white">
 
       <nav className="bg-black text-white p-4 flex flex-col md:flex-row justify-between items-center gap-4">
   <h1 className="text-2xl font-bold text-pink-500">
@@ -371,9 +386,10 @@ useEffect(() => {
     <div className="bg-black text-white p-6 rounded-2xl w-full max-w-md border border-pink-500">
 
       <img
-        src={user.avatar}
-        className="w-24 h-24 rounded-full mx-auto border-2 border-pink-500"
-      />
+  src={user.avatar}
+  alt="User Avatar"
+  className="w-24 h-24 rounded-full mx-auto border-2 border-pink-500"
+/>
 
       <h2 className="text-center text-2xl font-bold mt-4">
         {user.name}
@@ -430,6 +446,18 @@ useEffect(() => {
        
 </div>
       </div>
+        }
+      />
+
+      <Route
+  path="/profile/:username"
+  element={<ProfilePage />}
+/>
+
+    </Routes>
+
+  </BrowserRouter>
+   
   
   );
 }

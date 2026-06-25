@@ -1,4 +1,33 @@
+import html2canvas from "html2canvas";
+import { useRef } from "react";
 function DevCard({ user, stats, languages, theme }) {
+const cardRef = useRef(null);
+
+const downloadCard = async () => {
+  
+ const canvas = await html2canvas(cardRef.current, {
+  useCORS: true,
+  allowTaint: true,
+});
+
+  const image = canvas.toDataURL("image/png");
+
+  const link = document.createElement("a");
+
+  link.href = image;
+
+  link.download = `${user?.username}-devcard.png`;
+
+  link.click();
+};
+
+const copyLink = () => {
+  const url = `${window.location.origin}/profile/${user?.username}`;
+
+  navigator.clipboard.writeText(url);
+
+  alert("Link copied!");
+};
 
     const themes = {
   pink: {
@@ -25,14 +54,18 @@ function DevCard({ user, stats, languages, theme }) {
 
 const currentTheme = themes[theme];
 
-  return (
+ return (
+  <>
+     
     <div
-    className={`p-6 rounded-xl w-full max-w-md border ${currentTheme.card}`}
-  >
+  ref={cardRef}
+  className={`p-6 rounded-xl w-full max-w-md border ${currentTheme.card}`}
+>
 
       <img
         src={user?.avatar}
         alt="avatar"
+        crossOrigin="anonymous"
        className={`text-center text-2xl font-bold mt-4 ${currentTheme.accent}`}
       />
 
@@ -60,27 +93,27 @@ const currentTheme = themes[theme];
 
       <div className="grid grid-cols-2 gap-3 mt-6">
 
-  <div className="bg-black p-3 rounded-lg text-center">
-    <p className={currentTheme.stat}>🔥 Commits</p>
-    <p className="font-bold">{stats?.commits}</p>
-  </div>
+ <div className="bg-black p-3 rounded-lg text-center">
+  <p className={currentTheme.stat}>🔥 Commits</p>
+  <p className="font-bold text-white text-2xl">{stats?.commits}</p>
+</div>
 
-  <div className="bg-black p-3 rounded-lg text-center">
-    <p className={currentTheme.stat}>📦 Repos</p>
-    <p className="font-bold">{stats?.repos}</p>
-  </div>
+<div className="bg-black p-3 rounded-lg text-center">
+  <p className={currentTheme.stat}>📦 Repos</p>
+  <p className="font-bold text-white text-2xl">{stats?.repos}</p>
+</div>
 
-  <div className="bg-black p-3 rounded-lg text-center">
-    <p className={currentTheme.stat}>🔁 PRs</p>
-    <p className="font-bold">{stats?.prs}</p>
-  </div>
+<div className="bg-black p-3 rounded-lg text-center">
+  <p className={currentTheme.stat}>🔁 PRs</p>
+  <p className="font-bold text-white text-2xl">{stats?.prs}</p>
+</div>
 
-  <div className="bg-black p-3 rounded-lg text-center">
-    <p className={currentTheme.stat}>⭐ Stars</p>
-    <p className="font-bold">{stats?.stars}</p>
-  </div>
-    
-    <h3 className="mt-6 mb-3 text-center font-bold {currentTheme.stat}">
+<div className="bg-black p-3 rounded-lg text-center">
+  <p className={currentTheme.stat}>⭐ Stars</p>
+  <p className="font-bold text-white text-2xl">{stats?.stars}</p>
+</div>
+    </div>
+    <h3 className={`mt-6 mb-3 text-center font-bold ${currentTheme.stat}`}>
   Top Languages
 </h3>
 <div className="flex flex-wrap justify-center gap-2">
@@ -102,10 +135,27 @@ const currentTheme = themes[theme];
     devpulse.xyz/{user?.username}
   </p>
 </div>
+
 </div>
 
-    </div>
+ <button
+  onClick={downloadCard}
+  className="mt-4 w-full bg-pink-500 text-white py-2 rounded-lg"
+>
+  Download PNG
+</button>
+
+<button
+  onClick={copyLink}
+  className="mt-2 w-full bg-blue-500 text-white py-2 rounded-lg"
+>
+  Copy Link
+</button>
+
+    </>
+    
   );
+ 
 }
 
 export default DevCard;
