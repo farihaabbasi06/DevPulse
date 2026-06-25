@@ -276,7 +276,7 @@ useEffect(() => {
     <LanguageChart languages={languages} />
 
     <div className="mt-10 flex justify-center">
-  <ScoreRing />
+  <ScoreRing score={90} />
 </div>
 
     <div className="mt-10 w-full max-w-5xl">
