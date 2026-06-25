@@ -3,6 +3,7 @@ import axios from "axios";
 import LanguageChart from "./components/LanguageChart";
 import ContributionChart from "./components/ContributionChart";
 import ScoreRing from "./components/ScoreRing";
+import DevCard from "./components/DevCard";
 
 
 function App() {
@@ -231,6 +232,7 @@ useEffect(() => {
         <p className="text-pink-400 font-bold text-lg">
   
       Reputation Score: {user ? user.score : 0}/100
+      
 </p>
 
         <p>
@@ -239,8 +241,13 @@ useEffect(() => {
 
         <p>Location: {user.location}</p>
 
+       
       </div>
     )}
+      <DevCard
+  user={user}
+  stats={stats}
+/>
 
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mt-8 w-full max-w-5xl px-4">
 
