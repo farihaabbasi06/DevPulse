@@ -132,6 +132,8 @@ console.log({
     location: data.location,
     joined: data.created_at,
     score: score
+
+  
 };
 
         res.json(userInfo);

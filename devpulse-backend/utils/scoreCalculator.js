@@ -2,18 +2,13 @@ function normalize(value, maxValue) {
   return Math.min((value / maxValue) * 100, 100);
 }
 
-function calculateScore({
-  commits,
-  repos,
-  stars,
-  prs,
-  followers,
-}) {
- const commitScore = normalize(commits, 1500000);
-const repoScore = normalize(repos, 12);
-const starScore = normalize(stars, 255000);
-const prScore = normalize(prs, 82);
-const followerScore = normalize(followers, 310000);
+function calculateScore({ commits, repos, stars, prs, followers }) {
+
+  const commitScore = normalize(commits, 500);
+  const repoScore = normalize(repos, 30);
+  const starScore = normalize(stars, 100);
+  const prScore = normalize(prs, 50);
+  const followerScore = normalize(followers, 500);
 
   const finalScore =
     commitScore * 0.30 +

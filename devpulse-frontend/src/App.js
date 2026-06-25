@@ -229,7 +229,8 @@ useEffect(() => {
         <p>Followers: {user.followers}</p>
 
         <p className="text-pink-400 font-bold text-lg">
-  Reputation Score: {user.score}/100
+  
+      Reputation Score: {user ? user.score : 0}/100
 </p>
 
         <p>
@@ -275,9 +276,11 @@ useEffect(() => {
 
     <LanguageChart languages={languages} />
 
-    <div className="mt-10 flex justify-center">
-  <ScoreRing score={90} />
-</div>
+    {user && (
+  <div className="mt-10 flex justify-center">
+    <ScoreRing score={user.score} />
+  </div>
+)}
 
     <div className="mt-10 w-full max-w-5xl">
 
@@ -352,7 +355,7 @@ useEffect(() => {
         <p>🔁 PRs: {stats.prs}</p>
         <p>🔥 Commits: {stats.commits}</p>
         <p className="text-pink-400 font-bold">
-  🏆 Score: {user.score}/100
+  🏆 Score: {user ? user.score : 0}/100
 </p>
       </div>
     </div>
@@ -381,7 +384,7 @@ useEffect(() => {
       <p>PRs: {stats.prs}</p>
 
       <p className="text-pink-400 font-bold">
-  Reputation Score: {user.score}/100
+  Reputation Score: {user ? user.score : 0}/100
 </p>
     </div>
   </div>
