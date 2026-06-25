@@ -43,6 +43,8 @@ const [displayStats, setDisplayStats] = useState({
 
     setUser(response.data);
 
+    console.log(response.data.score);
+
     const reposResponse = await axios.get(
       `http://localhost:5000/api/repos/${username}`
     );
@@ -225,6 +227,10 @@ useEffect(() => {
 
         <p>Followers: {user.followers}</p>
 
+        <p className="text-pink-400 font-bold text-lg">
+  Reputation Score: {user.score}/100
+</p>
+
         <p>
           Joined: {new Date(user.joined).toLocaleDateString()}
         </p>
@@ -340,6 +346,9 @@ useEffect(() => {
         <p>📦 Repos: {stats.repos}</p>
         <p>🔁 PRs: {stats.prs}</p>
         <p>🔥 Commits: {stats.commits}</p>
+        <p className="text-pink-400 font-bold">
+  🏆 Score: {user.score}/100
+</p>
       </div>
     </div>
   </div>
@@ -365,6 +374,10 @@ useEffect(() => {
       <p>Stars: {stats.stars}</p>
       <p>Commits: {stats.commits}</p>
       <p>PRs: {stats.prs}</p>
+
+      <p className="text-pink-400 font-bold">
+  Reputation Score: {user.score}/100
+</p>
     </div>
   </div>
 )}

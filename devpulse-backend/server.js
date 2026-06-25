@@ -6,7 +6,7 @@ const axios = require("axios");
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
-
+const calculateScore = require("./utils/scoreCalculator");
 const app = express();
 const router = express.Router();
 
@@ -28,6 +28,8 @@ app.get("/", (req, res) => {
     res.send("Server running");
 });
 
+
+
 // GitHub USER route
 app.get("/api/user/:username", async (req, res) => {
     try {
@@ -44,15 +46,93 @@ app.get("/api/user/:username", async (req, res) => {
 
         const data = response.data;
 
-        const userInfo = {
-            name: data.name,
-            username: data.login,
-            bio: data.bio,
-            avatar: data.avatar_url,
-            followers: data.followers,
-            location: data.location,
-            joined: data.created_at
-        };
+const reposResponse = await axios.get(
+    `https://api.github.com/users/${username}/repos`,
+    {
+        headers: {
+            Authorization: `token ${process.env.GITHUB_TOKEN}`
+        }
+    }
+);
+
+const totalStars = reposResponse.data.reduce(
+    (sum, repo) => sum + repo.stargazers_count,
+    0
+);
+
+const prResponse = await axios.get(
+    `https://api.github.com/search/issues?q=author:${username}+type:pr`,
+    {
+        headers: {
+            Authorization: `token ${process.env.GITHUB_TOKEN}`
+        }
+    }
+);
+
+const totalPRs = prResponse.data.total_count;
+
+const repos = reposResponse.data;
+
+let totalCommits = 0;
+
+await Promise.all(
+    repos.map(async (repo) => {
+        try {
+            const commitRes = await axios.get(
+                `https://api.github.com/repos/${username}/${repo.name}/commits?per_page=1`,
+                {
+                    headers: {
+                        Authorization: `token ${process.env.GITHUB_TOKEN}`
+                    }
+                }
+            );
+
+            const linkHeader = commitRes.headers["link"];
+
+            if (linkHeader) {
+                const match = linkHeader.match(
+                    /page=(\d+)>; rel="last"/
+                );
+
+                if (match) {
+                    totalCommits += parseInt(match[1]);
+                }
+            } else {
+                totalCommits += commitRes.data.length;
+            }
+
+        } catch (err) {
+            // Skip empty repos
+        }
+    })
+);
+
+console.log({
+    commits: totalCommits,
+    repos: data.public_repos,
+    stars: totalStars,
+    prs: totalPRs,
+    followers: data.followers
+});
+
+    const score = calculateScore({
+    commits: totalCommits,
+    repos: data.public_repos,
+    stars: totalStars,
+    prs: totalPRs,
+    followers: data.followers
+});
+
+       const userInfo = {
+    name: data.name,
+    username: data.login,
+    bio: data.bio,
+    avatar: data.avatar_url,
+    followers: data.followers,
+    location: data.location,
+    joined: data.created_at,
+    score: score
+};
 
         res.json(userInfo);
 
