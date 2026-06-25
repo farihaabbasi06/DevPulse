@@ -69,6 +69,11 @@ function DevCard({ user, stats, languages }) {
     ))}
 
 </div>
+<div className="mt-6 pt-4 border-t border-gray-700 text-center">
+  <p className="text-sm text-gray-400">
+    devpulse.xyz/{user?.username}
+  </p>
+</div>
 </div>
 
     </div>
