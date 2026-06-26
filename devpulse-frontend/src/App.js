@@ -11,9 +11,12 @@ import {
 } from "react-router-dom";
 import ProfilePage from "./pages/ProfilePage";
 import Resume from "./components/Resume";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
 
 
 function App() {
+const token = localStorage.getItem("token");
 const [activeTab, setActiveTab] = useState("dashboard");
  const [username, setUsername] = useState("");
 const [user, setUser] = useState(null);
@@ -410,6 +413,7 @@ useEffect(() => {
   path="/profile/:username"
   element={<ProfilePage />}
 />
+
 
     </Routes>
 
