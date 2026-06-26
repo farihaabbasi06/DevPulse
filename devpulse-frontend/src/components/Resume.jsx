@@ -25,6 +25,19 @@ const [skillInput, setSkillInput] = useState("");
 const allSkills = [...skills, ...extraSkills];
 const uniqueSkills = [...new Set(allSkills)];
 
+const [editMode, setEditMode] = useState({
+  name: false,
+  email: false,
+  bio: false,
+});
+
+const handleBlurSave = (field) => {
+  setEditMode({ ...editMode, [field]: false });
+};
+
+const [eduEditIndex, setEduEditIndex] = useState(null);
+const [expEditIndex, setExpEditIndex] = useState(null);
+
 useEffect(() => {
   if (user) {
     setEditableData({
@@ -40,17 +53,29 @@ useEffect(() => {
 
       <div className="border-b pb-6">
 
-       <input
-  type="text"
-  value={editableData.name}
-  onChange={(e) =>
-    setEditableData({
-      ...editableData,
-      name: e.target.value,
-    })
-  }
-  className="text-4xl font-bold text-gray-900 w-full border-b-2 border-transparent focus:border-pink-500 outline-none bg-transparent"
-/>
+       {editMode.name ? (
+  <input
+    value={editableData.name}
+    onChange={(e) =>
+      setEditableData({
+        ...editableData,
+        name: e.target.value,
+      })
+    }
+    onBlur={() => handleBlurSave("name")}
+    autoFocus
+    className="text-3xl font-bold border-b outline-none"
+  />
+) : (
+  <h1
+    onClick={() =>
+      setEditMode({ ...editMode, name: true })
+    }
+    className="text-3xl font-bold cursor-pointer"
+  >
+    {editableData.name}
+  </h1>
+)}
 
         <p className="text-lg text-gray-600 mt-1">
           @{user?.username}
@@ -61,18 +86,28 @@ useEffect(() => {
          <div className="flex items-center gap-2">
   <span>📧</span>
 
+  {editMode.email ? (
   <input
-    type="email"
     value={editableData.email}
-    placeholder="Enter your email"
     onChange={(e) =>
       setEditableData({
         ...editableData,
         email: e.target.value,
       })
     }
-    className="w-full border-b border-transparent focus:border-pink-500 outline-none bg-transparent"
+    onBlur={() => handleBlurSave("email")}
+    autoFocus
   />
+) : (
+  <p
+    onClick={() =>
+      setEditMode({ ...editMode, email: true })
+    }
+    className="cursor-pointer"
+  >
+     {editableData.email}
+  </p>
+)}
 </div>
 
           <p>
@@ -89,18 +124,29 @@ useEffect(() => {
     Professional Summary
   </h2>
 
+ {editMode.bio ? (
   <textarea
-  rows="4"
-  value={editableData.bio}
-  placeholder="Write a short professional summary..."
-  onChange={(e) =>
-    setEditableData({
-      ...editableData,
-      bio: e.target.value,
-    })
-  }
-  className="w-full border rounded-lg p-3 outline-none focus:border-pink-500 resize-none"
-/>
+    value={editableData.bio}
+    onChange={(e) =>
+      setEditableData({
+        ...editableData,
+        bio: e.target.value,
+      })
+    }
+    onBlur={() => handleBlurSave("bio")}
+    autoFocus
+    className="w-full border p-2"
+  />
+) : (
+  <p
+    onClick={() =>
+      setEditMode({ ...editMode, bio: true })
+    }
+    className="cursor-pointer text-gray-600"
+  >
+    {editableData.bio}
+  </p>
+)}
 </div>
 <div className="mt-8">
   <h2 className="text-2xl font-bold text-gray-800 mb-4">
@@ -176,17 +222,35 @@ useEffect(() => {
 
 <div className="mt-6 space-y-3">
   {education.map((edu, index) => (
-    <div
-      key={index}
-      className="border rounded-lg p-3"
-    >
-      <h3 className="font-bold">
-        {edu.degree}
-      </h3>
+    <div key={index} className="border p-3 rounded-lg">
 
+      {/* DEGREE */}
+      {eduEditIndex === index ? (
+        <input
+          value={edu.degree}
+          onChange={(e) => {
+            const updated = [...education];
+            updated[index].degree = e.target.value;
+            setEducation(updated);
+          }}
+          onBlur={() => setEduEditIndex(null)}
+          autoFocus
+        />
+      ) : (
+        <h3
+          onClick={() => setEduEditIndex(index)}
+          className="font-bold cursor-pointer"
+        >
+          {edu.degree}
+        </h3>
+      )}
+
+      {/* INSTITUTE */}
       <p>{edu.institute}</p>
 
+      {/* YEAR */}
       <p>{edu.year}</p>
+
     </div>
   ))}
 </div>
@@ -266,21 +330,32 @@ useEffect(() => {
 
 <div className="mt-6 space-y-3">
   {experience.map((exp, index) => (
-    <div
-      key={index}
-      className="border rounded-lg p-3"
-    >
-      <h3 className="font-bold">
+  <div key={index} className="border p-3 rounded-lg">
+
+    {expEditIndex === index ? (
+      <input
+        value={exp.company}
+        onChange={(e) => {
+          const updated = [...experience];
+          updated[index].company = e.target.value;
+          setExperience(updated);
+        }}
+        onBlur={() => setExpEditIndex(null)}
+        autoFocus
+      />
+    ) : (
+      <h3
+        onClick={() => setExpEditIndex(index)}
+        className="font-bold cursor-pointer"
+      >
         {exp.company}
       </h3>
+    )}
 
-      <p>{exp.role}</p>
-
-      <p className="text-gray-600">
-        {exp.duration}
-      </p>
-    </div>
-  ))}
+    <p>{exp.role}</p>
+    <p>{exp.duration}</p>
+  </div>
+))}
 
   
 </div>
