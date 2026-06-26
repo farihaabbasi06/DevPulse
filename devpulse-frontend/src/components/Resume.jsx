@@ -45,6 +45,41 @@ function Resume({ user, stats, languages, repos }) {
   </div>
 </div>
           
+          <div className="mt-10">
+  <h2 className="text-2xl font-bold text-gray-800 mb-4">
+    Projects
+  </h2>
+
+  {topProjects.map((repo) => (
+    <div
+      key={repo.name}
+      className="border rounded-lg p-4 mb-4"
+    >
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-bold">
+          {repo.name}
+        </h3>
+
+        <span className="text-yellow-600 font-semibold">
+          ⭐ {repo.stars}
+        </span>
+      </div>
+
+      <p className="text-gray-600 mt-2">
+        {repo.description || "No description available"}
+      </p>
+
+      <a
+        href={repo.url}
+        target="_blank"
+        rel="noreferrer"
+        className="text-blue-600 underline mt-2 inline-block"
+      >
+        View on GitHub
+      </a>
+    </div>
+  ))}
+</div>
             
         </div>
  <div className="mt-6">
