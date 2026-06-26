@@ -394,10 +394,11 @@ useEffect(() => {
 
 {activeTab === "resume" && (
   <Resume
-    user={user}
-    stats={stats}
-    languages={languages}
-  />
+  user={user}
+  stats={stats}
+  languages={languages}
+  repos={repos}
+/>
 )}
        
 </div>
