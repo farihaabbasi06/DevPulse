@@ -10,6 +10,7 @@ import {
   Route
 } from "react-router-dom";
 import ProfilePage from "./pages/ProfilePage";
+import Resume from "./components/Resume";
 
 
 function App() {
@@ -263,35 +264,11 @@ useEffect(() => {
 
    
 
-    <DevCard
-  user={user}
-  stats={stats}
-  languages={languages}
-  theme={cardTheme}
-/>
+    
 
  <div className="flex justify-center gap-3 mb-4">
 
-  <button
-    onClick={() => setCardTheme("pink")}
-    className="bg-pink-500 px-4 py-2 rounded"
-  >
-    Pink
-  </button>
-
-  <button
-    onClick={() => setCardTheme("navy")}
-    className="bg-blue-900 px-4 py-2 rounded"
-  >
-    Navy
-  </button>
-
-  <button
-    onClick={() => setCardTheme("purple")}
-    className="bg-purple-700 px-4 py-2 rounded"
-  >
-    Purple
-  </button>
+  
 
 </div>
 
@@ -381,67 +358,46 @@ useEffect(() => {
   </>
 )}
 
-{activeTab === "devcard" && user && (
-  <div className="flex justify-center mt-20 px-4">
-    <div className="bg-black text-white p-6 rounded-2xl w-full max-w-md border border-pink-500">
+{activeTab === "devcard" && (
+  <>
+    <DevCard
+      user={user}
+      stats={stats}
+      languages={languages}
+      theme={cardTheme}
+    />
 
-      <img
-  src={user.avatar}
-  alt="User Avatar"
-  className="w-24 h-24 rounded-full mx-auto border-2 border-pink-500"
-/>
+    <div className="flex justify-center gap-3 mt-6">
+      <button
+        onClick={() => setCardTheme("pink")}
+        className="bg-pink-500 px-4 py-2 rounded"
+      >
+        Pink
+      </button>
 
-      <h2 className="text-center text-2xl font-bold mt-4">
-        {user.name}
-      </h2>
+      <button
+        onClick={() => setCardTheme("navy")}
+        className="bg-blue-900 px-4 py-2 rounded"
+      >
+        Navy
+      </button>
 
-      <p className="text-center text-gray-400">
-        @{user.username}
-      </p>
-
-      <p className="text-center mt-2 text-sm">
-        {user.bio}
-      </p>
-
-      <div className="mt-4 text-sm space-y-2">
-        <p>⭐ Stars: {stats.stars}</p>
-        <p>📦 Repos: {stats.repos}</p>
-        <p>🔁 PRs: {stats.prs}</p>
-        <p>🔥 Commits: {stats.commits}</p>
-        <p className="text-pink-400 font-bold">
-  🏆 Score: {user ? user.score : 0}/100
-</p>
-      </div>
+      <button
+        onClick={() => setCardTheme("purple")}
+        className="bg-purple-700 px-4 py-2 rounded"
+      >
+        Purple
+      </button>
     </div>
-  </div>
+  </>
 )}
 
-{activeTab === "resume" && user && (
-  <div className="mt-20 px-4 max-w-3xl mx-auto">
-    <div className="bg-gray-900 border border-pink-500 p-6 rounded-lg shadow">
-
-     <h2 className="text-2xl font-bold mb-4 text-pink-500">
-  Resume Summary
-</h2>
-
-      <p><b>Name:</b> {user.name}</p>
-      <p><b>GitHub:</b> @{user.username}</p>
-      <p><b>Followers:</b> {user.followers}</p>
-
-      <h3 className="mt-4 font-bold">Tech Stack</h3>
-      <p>{Object.keys(languages).join(", ")}</p>
-
-      <h3 className="mt-4 font-bold">Stats</h3>
-      <p>Repos: {stats.repos}</p>
-      <p>Stars: {stats.stars}</p>
-      <p>Commits: {stats.commits}</p>
-      <p>PRs: {stats.prs}</p>
-
-      <p className="text-pink-400 font-bold">
-  Reputation Score: {user ? user.score : 0}/100
-</p>
-    </div>
-  </div>
+{activeTab === "resume" && (
+  <Resume
+    user={user}
+    stats={stats}
+    languages={languages}
+  />
 )}
        
 </div>
