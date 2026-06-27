@@ -53,8 +53,7 @@ axios
     setStats({
       repos: repos.totalRepos,
       stars: repos.totalStars,
-      repos: repos.totalRepos,
-  stars: repos.totalStars,
+    
     });
   });
 
@@ -81,3 +80,4 @@ axios
 }
 
 export default ProfilePage;
+

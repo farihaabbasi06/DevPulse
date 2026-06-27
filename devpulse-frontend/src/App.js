@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Navigate } from "react-router-dom";
 import axios from "axios";
 import LanguageChart from "./components/LanguageChart";
 import ContributionChart from "./components/ContributionChart";
@@ -16,7 +17,12 @@ import Register from "./pages/Register";
 
 
 function App() {
-const token = localStorage.getItem("token");
+const [token, setToken] = useState(localStorage.getItem("token"));
+
+useEffect(() => {
+  const stored = localStorage.getItem("token");
+  setToken(stored);
+}, []);
 const [activeTab, setActiveTab] = useState("dashboard");
  const [username, setUsername] = useState("");
 const [user, setUser] = useState(null);
@@ -24,7 +30,10 @@ const [loading, setLoading] = useState(false);
 const [error, setError] = useState("");
 const [contributions, setContributions] = useState({});
 const [cardTheme, setCardTheme] = useState("pink");
-
+const handleLogout = () => {
+  localStorage.removeItem("token");
+  setToken(null);
+};
 const [stats, setStats] = useState({
   commits: 0,
   repos: 0,
@@ -152,10 +161,16 @@ useEffect(() => {
       <Route
         path="/"
         element={
-          
+          token ? (
            <div className="min-h-screen bg-black text-white">
 
       <nav className="bg-black text-white p-4 flex flex-col md:flex-row justify-between items-center gap-4">
+        <button
+  onClick={handleLogout}
+  className="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg"
+>
+  Logout
+</button>
   <h1 className="text-2xl font-bold text-pink-500">
     DevPulse
   </h1>
@@ -405,14 +420,19 @@ useEffect(() => {
 )}
        
 </div>
-      </div>
-        }
+      </div> ) : (
+      <Navigate to="/login" />
+    )
+  }
       />
 
-      <Route
-  path="/profile/:username"
-  element={<ProfilePage />}
-/>
+
+
+<Route path="/login" element={<Login />} />
+<Route path="/register" element={<Register />} />
+
+
+
 
 
     </Routes>

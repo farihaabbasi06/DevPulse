@@ -435,6 +435,67 @@ app.get("/api/contributions/:username", async (req, res) => {
   }
 });
 
+const nodemailer = require("nodemailer");
+const crypto = require("crypto");
+
+// Store OTPs temporarily
+const otpStore = {};
+
+// SEND OTP
+app.post("/api/forgot-password", async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: "Email not found" });
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    otpStore[email] = { otp, expires: Date.now() + 10 * 60 * 1000 };
+
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
+
+    await transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: "DevPulse Password Reset OTP",
+      html: `<h2>Your OTP is: <b>${otp}</b></h2><p>This OTP expires in 10 minutes.</p>`,
+    });
+
+    res.json({ message: "OTP sent to email" });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// VERIFY OTP + RESET PASSWORD
+app.post("/api/reset-password", async (req, res) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+
+    const record = otpStore[email];
+    if (!record) return res.status(400).json({ message: "OTP not found" });
+    if (record.otp !== otp) return res.status(400).json({ message: "Wrong OTP" });
+    if (Date.now() > record.expires) return res.status(400).json({ message: "OTP expired" });
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await User.findOneAndUpdate({ email }, { password: hashedPassword });
+
+    delete otpStore[email];
+
+    res.json({ message: "Password reset successful" });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Start server
 const PORT = process.env.PORT || 5000;
 

@@ -316,6 +316,7 @@ function Resume({ user, stats, languages, repos }) {
                     className="bg-pink-50 text-pink-700 border border-pink-200 px-3 py-1 rounded-full text-sm font-medium"
                   >
                     {skill}
+                    <button onClick={() => setExtraSkills(extraSkills.filter(s => s !== skill))} className="text-red-400 hover:text-red-600 font-bold ml-1">×</button>
                   </span>
                 ))}
               </div>
@@ -334,7 +335,10 @@ function Resume({ user, stats, languages, repos }) {
                     <h3 className="font-bold text-gray-800">{edu.degree}</h3>
                     <p className="text-gray-600 text-sm">{edu.institute}</p>
                   </div>
+                  <div className="flex items-center gap-3">
                   <span className="text-gray-500 text-sm font-medium">{edu.year}</span>
+                   <button onClick={() => setEducation(education.filter((_, i) => i !== index))} className="text-red-500 font-bold">×</button>
+                </div>
                 </div>
               ))}
             </div>
@@ -352,9 +356,12 @@ function Resume({ user, stats, languages, repos }) {
                     <h3 className="font-bold text-gray-800">{exp.role}</h3>
                     <p className="text-gray-600 text-sm">{exp.company}</p>
                   </div>
-                  <span className="text-gray-500 text-sm font-medium">{exp.duration}</span>
-                </div>
-              ))}
+                  <div className="flex items-center gap-3">
+      <span className="text-gray-500 text-sm">{exp.duration}</span>
+      <button onClick={() => setExperience(experience.filter((_, i) => i !== index))} className="text-red-500 font-bold">×</button>
+    </div>
+  </div>
+))}
             </div>
           )}
 
