@@ -107,13 +107,6 @@ await Promise.all(
     })
 );
 
-console.log({
-    commits: totalCommits,
-    repos: data.public_repos,
-    stars: totalStars,
-    prs: totalPRs,
-    followers: data.followers
-});
 
     const score = calculateScore({
     commits: totalCommits,

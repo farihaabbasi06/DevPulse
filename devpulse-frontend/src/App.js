@@ -65,7 +65,7 @@ const [displayStats, setDisplayStats] = useState({
 
     setUser(response.data);
 
-    console.log(response.data.score);
+    
 
     const reposResponse = await axios.get(
       `http://localhost:5000/api/repos/${username}`
@@ -114,8 +114,12 @@ setDisplayStats({
   commits: commitsResponse.data.totalCommits
 }));
 
-  } catch (err) {
-    setError("User not found");
+  }  catch (err) {
+  if (err.response?.status === 404) {
+    setError("GitHub user not found. Please check the username and try again.");
+  } else {
+    setError("Something went wrong. Please try again later.");
+  }
 
   } finally {
     setLoading(false);
@@ -232,16 +236,46 @@ useEffect(() => {
           Search
         </button>
 
+{/* <button
+  onClick={searchUser}
+  className="bg-pink-500 hover:bg-pink-600 text-white px-6 py-3 mt-4 rounded-lg"
+>
+  Search
+</button> */}
+
+{/* REPLACE THIS PART */}
 {loading && (
-  <p className="mt-4 text-pink-400 font-semibold">
-    Loading...
-  </p>
+  <div className="mt-6 flex flex-col items-center">
+    <div className="w-10 h-10 border-4 border-pink-500 border-t-transparent rounded-full animate-spin"></div>
+
+    <p className="mt-3 text-pink-400 font-medium">
+      Fetching GitHub profile...
+    </p>
+  </div>
 )}
 
 {error && (
   <p className="mt-4 text-red-400 font-semibold">
     {error}
   </p>
+)}
+
+{error && (
+  <div className="mt-6 w-full max-w-md bg-red-100 border border-red-400 rounded-xl p-4 shadow-md">
+    <div className="flex items-start gap-3">
+      <span className="text-2xl">⚠️</span>
+
+      <div>
+        <h3 className="font-bold text-red-700">
+          Search Failed
+        </h3>
+
+        <p className="text-red-600 text-sm mt-1">
+          {error}
+        </p>
+      </div>
+    </div>
+  </div>
 )}
 
 {activeTab === "dashboard" && (

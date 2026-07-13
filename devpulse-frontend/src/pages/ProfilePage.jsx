@@ -59,7 +59,7 @@ axios
 
       })
       .catch((err) => {
-        console.log(err);
+        //setError("Unable to load profile.");
       });
   }, [username]);
 

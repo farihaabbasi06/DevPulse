@@ -12,23 +12,33 @@ function Login() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [message, setMessage] = useState("");
   const navigate = useNavigate();
+  const [error, setError] = useState("");
+  const [messageType, setMessageType] = useState("success");
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) navigate("/");
-  }, []);
+ useEffect(() => {
+  const token = localStorage.getItem("token");
+  if (token) navigate("/");
+}, [navigate]);
 
   const handleLogin = async () => {
+  setError("");
+  setLoading(true);
     try {
       const res = await axios.post("http://localhost:5000/api/login", {
         email,
         password,
       });
       localStorage.setItem("token", res.data.token);
-window.location.href = "/";
+navigate("/");
     } catch (err) {
-      alert("Login failed — check your email and password");
-    }
+  setError(
+    err.response?.data?.message ||
+    "Invalid email or password."
+  );
+}finally {
+  setLoading(false);
+}
   };
 
   const handleSendOTP = async () => {
@@ -36,16 +46,19 @@ window.location.href = "/";
       await axios.post("http://localhost:5000/api/forgot-password", {
         email: forgotEmail,
       });
+      setMessageType("success");
       setMessage("OTP sent to your email. Check inbox.");
       setStep("otp");
     } catch (err) {
-      setMessage("Email not found in our system.");
+      setMessageType("error");
+setMessage("Email not found in our system.");
     }
   };
 
   const handleResetPassword = async () => {
     if (newPassword !== confirmPassword) {
-      setMessage("Passwords do not match.");
+      setMessageType("error");
+setMessage("Passwords do not match.");
       return;
     }
     try {
@@ -54,10 +67,12 @@ window.location.href = "/";
         otp,
         newPassword,
       });
-      setMessage("Password reset successful! Please login.");
+      setMessageType("success");
+setMessage("Password reset successful! Please login.");
       setTimeout(() => setStep("login"), 2000);
     } catch (err) {
-      setMessage(err.response?.data?.message || "Reset failed");
+      setMessageType("error");
+setMessage(err.response?.data?.message || "Reset failed");
     }
   };
 
@@ -89,11 +104,19 @@ window.location.href = "/";
         />
 
         <button
-          onClick={handleLogin}
-          className="w-full bg-pink-500 hover:bg-pink-600 p-3 rounded font-bold transition"
-        >
-          Login
-        </button>
+  onClick={handleLogin}
+  disabled={loading}
+  className="w-full bg-pink-500 hover:bg-pink-600 p-3 rounded font-bold disabled:opacity-50"
+>
+  {loading ? "Logging in..." : "Login"}
+</button>
+        {error && (
+  <div className="mt-4 bg-red-100 border border-red-400 rounded-lg p-3">
+    <p className="text-red-700 text-sm font-medium">
+      {error}
+    </p>
+  </div>
+)}
 
         <p className="text-center mt-3 text-gray-500 text-sm">
           Forgot password?{" "}
@@ -119,7 +142,17 @@ window.location.href = "/";
           className="w-full p-3 mb-4 rounded bg-black border border-gray-600 text-white outline-none focus:border-pink-500"
         />
 
-        {message && <p className="text-pink-400 text-center mb-3 text-sm">{message}</p>}
+        {message && (
+  <div
+    className={`mb-3 rounded-lg p-3 text-sm text-center font-medium ${
+      messageType === "success"
+        ? "bg-green-100 text-green-700 border border-green-300"
+        : "bg-red-100 text-red-700 border border-red-300"
+    }`}
+  >
+    {message}
+  </div>
+)}
 
         <button
           onClick={handleSendOTP}
@@ -166,7 +199,17 @@ window.location.href = "/";
           className="w-full p-3 mb-4 rounded bg-black border border-gray-600 text-white outline-none focus:border-pink-500"
         />
 
-        {message && <p className="text-pink-400 text-center mb-3 text-sm">{message}</p>}
+        {message && (
+  <div
+    className={`mb-3 rounded-lg p-3 text-sm text-center font-medium ${
+      messageType === "success"
+        ? "bg-green-100 text-green-700 border border-green-300"
+        : "bg-red-100 text-red-700 border border-red-300"
+    }`}
+  >
+    {message}
+  </div>
+)}
 
         <button
           onClick={handleResetPassword}
