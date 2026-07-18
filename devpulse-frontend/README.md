@@ -1,70 +1,229 @@
-# Getting Started with Create React App
+# DevPulse Frontend
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+DevPulse Frontend is a React-based web application that provides GitHub Developer Analytics. It allows users to search GitHub profiles, analyze developer activity, generate developer cards, and create professional resumes.
+
+---
+
+## Features
+
+- User Registration
+- User Login with JWT Authentication
+- Forgot Password using OTP
+- GitHub Profile Search
+- Reputation Score Calculation
+- Repository Statistics
+- Contribution Activity Chart
+- Programming Language Analysis
+- Developer Card Generator
+- Download Dev Card as PNG
+- Resume Generator
+- Responsive User Interface
+- Professional Error Handling
+- Loading Indicators during API Calls
+
+---
+
+## Tech Stack
+
+- React.js
+- Tailwind CSS
+- Axios
+- React Router DOM
+- Chart.js
+- html2canvas
+
+---
+
+## Project Structure
+
+```
+devpulse-frontend/
+│
+├── public/
+├── src/
+│   ├── components/
+│   ├── pages/
+│   ├── assets/
+│   ├── App.js
+│   └── index.js
+│
+├── package.json
+├── tailwind.config.js
+├── postcss.config.js
+└── README.md
+```
+
+---
+
+## Installation
+
+Clone the repository
+
+```bash
+git clone https://github.com/farihaabbasi06/DevPulse.git
+```
+
+Go to the frontend folder
+
+```bash
+cd DevPulse/devpulse-frontend
+```
+
+Install dependencies
+
+```bash
+npm install
+```
+
+Start the development server
+
+```bash
+npm start
+```
+
+The application will run on
+
+```
+http://localhost:3000
+```
+
+---
+
+## Backend Requirement
+
+The frontend requires the backend server to be running.
+
+Backend URL (Development)
+
+```
+http://localhost:5000
+```
+
+If deploying, update the API URL to your deployed backend.
+
+---
+
+## Environment Variables
+
+Create a `.env` file inside the frontend directory.
+
+Example:
+
+```env
+REACT_APP_API_URL=http://localhost:5000
+```
+
+For deployment:
+
+```env
+REACT_APP_API_URL=https://your-backend-url.onrender.com
+```
+
+---
 
 ## Available Scripts
 
-In the project directory, you can run:
+Start development server
 
-### `npm start`
+```bash
+npm start
+```
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+Build production version
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+```bash
+npm run build
+```
 
-### `npm test`
+Run tests
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+```bash
+npm test
+```
 
-### `npm run build`
+---
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## Main Pages
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+- Login
+- Register
+- Forgot Password
+- Dashboard
+- Developer Card
+- Resume
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+---
 
-### `npm run eject`
+## Main Components
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+- Language Chart
+- Contribution Chart
+- Score Ring
+- Dev Card
+- Resume Generator
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+---
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+## API Endpoints Used
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+```
+POST /api/register
+POST /api/login
+POST /api/forgot-password
+POST /api/reset-password
 
-## Learn More
+GET /api/user/:username
+GET /api/repos/:username
+GET /api/commits/:username
+GET /api/pullrequests/:username
+GET /api/contributions/:username
+```
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+---
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+## Dependencies
 
-### Code Splitting
+Some important packages used in this project:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+- React
+- Axios
+- React Router DOM
+- Tailwind CSS
+- html2canvas
+- Chart.js
 
-### Analyzing the Bundle Size
+Install all packages using
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+```bash
+npm install
+```
 
-### Making a Progressive Web App
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
 
-### Advanced Configuration
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+## Future Improvements
 
-### Deployment
+- PDF Resume Export
+- Dark/Light Theme
+- More GitHub Analytics
+- Profile Comparison
+- Better Mobile Optimization
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+---
 
-### `npm run build` fails to minify
+## Author
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+**Fariha Abbasi**
+
+Software Engineering
+
+COMSATS University Islamabad
+
+Abbottabad Campus
+
+---
+
+## License
+
+This project was developed for educational purposes
