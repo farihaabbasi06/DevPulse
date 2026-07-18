@@ -28,8 +28,6 @@ app.get("/", (req, res) => {
     res.send("Server running");
 });
 
-
-
 // GitHub USER route
 app.get("/api/user/:username", async (req, res) => {
     try {
@@ -46,95 +44,99 @@ app.get("/api/user/:username", async (req, res) => {
 
         const data = response.data;
 
-const reposResponse = await axios.get(
-    `https://api.github.com/users/${username}/repos`,
-    {
-        headers: {
-            Authorization: `token ${process.env.GITHUB_TOKEN}`
-        }
-    }
-);
-
-const totalStars = reposResponse.data.reduce(
-    (sum, repo) => sum + repo.stargazers_count,
-    0
-);
-
-const prResponse = await axios.get(
-    `https://api.github.com/search/issues?q=author:${username}+type:pr`,
-    {
-        headers: {
-            Authorization: `token ${process.env.GITHUB_TOKEN}`
-        }
-    }
-);
-
-const totalPRs = prResponse.data.total_count;
-
-const repos = reposResponse.data;
-
-let totalCommits = 0;
-
-await Promise.all(
-    repos.map(async (repo) => {
-        try {
-            const commitRes = await axios.get(
-                `https://api.github.com/repos/${username}/${repo.name}/commits?per_page=1`,
-                {
-                    headers: {
-                        Authorization: `token ${process.env.GITHUB_TOKEN}`
-                    }
+        const reposResponse = await axios.get(
+            `https://api.github.com/users/${username}/repos`,
+            {
+                headers: {
+                    Authorization: `token ${process.env.GITHUB_TOKEN}`
                 }
-            );
-
-            const linkHeader = commitRes.headers["link"];
-
-            if (linkHeader) {
-                const match = linkHeader.match(
-                    /page=(\d+)>; rel="last"/
-                );
-
-                if (match) {
-                    totalCommits += parseInt(match[1]);
-                }
-            } else {
-                totalCommits += commitRes.data.length;
             }
+        );
 
-        } catch (err) {
-            // Skip empty repos
-        }
-    })
-);
+        const totalStars = reposResponse.data.reduce(
+            (sum, repo) => sum + repo.stargazers_count,
+            0
+        );
 
+        const prResponse = await axios.get(
+            `https://api.github.com/search/issues?q=author:${username}+type:pr`,
+            {
+                headers: {
+                    Authorization: `token ${process.env.GITHUB_TOKEN}`
+                }
+            }
+        );
 
-    const score = calculateScore({
-    commits: totalCommits,
-    repos: data.public_repos,
-    stars: totalStars,
-    prs: totalPRs,
-    followers: data.followers
-});
+        const totalPRs = prResponse.data.total_count;
 
-       const userInfo = {
-    name: data.name,
-    username: data.login,
-    bio: data.bio,
-    avatar: data.avatar_url,
-    followers: data.followers,
-    location: data.location,
-    joined: data.created_at,
-    score: score
+        const repos = reposResponse.data;
 
-  
-};
+        let totalCommits = 0;
+
+        await Promise.all(
+            repos.map(async (repo) => {
+                try {
+                    const commitRes = await axios.get(
+                        `https://api.github.com/repos/${username}/${repo.name}/commits?per_page=1`,
+                        {
+                            headers: {
+                                Authorization: `token ${process.env.GITHUB_TOKEN}`
+                            }
+                        }
+                    );
+
+                    const linkHeader = commitRes.headers["link"];
+
+                    if (linkHeader) {
+                        const match = linkHeader.match(
+                            /page=(\d+)>; rel="last"/
+                        );
+
+                        if (match) {
+                            totalCommits += parseInt(match[1]);
+                        }
+                    } else {
+                        totalCommits += commitRes.data.length;
+                    }
+
+                } catch (err) {
+                    // Skip empty repos
+                }
+            })
+        );
+
+        const score = calculateScore({
+            commits: totalCommits,
+            repos: data.public_repos,
+            stars: totalStars,
+            prs: totalPRs,
+            followers: data.followers
+        });
+
+        const userInfo = {
+            name: data.name,
+            username: data.login,
+            bio: data.bio,
+            avatar: data.avatar_url,
+            followers: data.followers,
+            location: data.location,
+            joined: data.created_at,
+            score: score
+        };
 
         res.json(userInfo);
 
     } catch (error) {
+        if (error.response && error.response.status === 404) {
+            return res.status(404).json({
+                message: "GitHub user not found"
+            });
+        }
+
+        console.error(error.message);
+
         res.status(500).json({
-            message: "Error fetching GitHub user",
-            error: error.message
+            message: "Internal server error"
         });
     }
 });
@@ -162,7 +164,6 @@ app.get("/api/repos/:username", async (req, res) => {
 
         const formattedRepos = await Promise.all(
             repos.map(async (repo) => {
-
                 const langRes = await axios.get(
                     `https://api.github.com/repos/${username}/${repo.name}/languages`,
                     {
@@ -173,15 +174,15 @@ app.get("/api/repos/:username", async (req, res) => {
                 );
 
                 return {
-    name: repo.name,
-    description: repo.description,
-    full_name: repo.full_name,
-    stars: repo.stargazers_count,
-    forks: repo.forks_count,
-    language: repo.language,
-    languages: Object.keys(langRes.data),
-    url: repo.html_url
-};
+                    name: repo.name,
+                    description: repo.description,
+                    full_name: repo.full_name,
+                    stars: repo.stargazers_count,
+                    forks: repo.forks_count,
+                    language: repo.language,
+                    languages: Object.keys(langRes.data),
+                    url: repo.html_url
+                };
             })
         );
 
@@ -358,6 +359,7 @@ app.get("/api/pullrequests/:username", async (req, res) => {
     }
 });
 
+// FIXED: Contributions route dynamic month logic
 app.get("/api/contributions/:username", async (req, res) => {
   try {
     const username = req.params.username;
@@ -391,31 +393,27 @@ app.get("/api/contributions/:username", async (req, res) => {
       }
     );
 
-    const monthlyData = {
-      Jan: 0,
-      Feb: 0,
-      Mar: 0,
-      Apr: 0,
-      May: 0,
-      Jun: 0
-    };
+    // DYNAMICALLY GENERATE LAST 6 MONTHS KEYS (with en-US locale to prevent locale issues)
+    const monthlyData = {};
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date();
+      d.setMonth(d.getMonth() - i);
+      const monthKey = d.toLocaleString("en-US", { month: "short" });
+      monthlyData[monthKey] = 0;
+    }
 
-    const weeks =
-      response.data.data.user.contributionsCollection
-        .contributionCalendar.weeks;
+    const weeks = response.data.data.user.contributionsCollection.contributionCalendar.weeks;
 
     weeks.forEach((week) => {
       week.contributionDays.forEach((day) => {
-
-        const month = new Date(day.date)
-          .toLocaleString("default", {
-            month: "short"
-          });
+        // Explicitly format to en-US short month (e.g. "Jul") to match generated keys
+        const month = new Date(day.date).toLocaleString("en-US", {
+          month: "short"
+        });
 
         if (monthlyData[month] !== undefined) {
           monthlyData[month] += day.contributionCount;
         }
-
       });
     });
 

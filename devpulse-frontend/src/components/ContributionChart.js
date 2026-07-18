@@ -17,28 +17,92 @@ ChartJS.register(
   Legend
 );
 
-function ContributionChart({ contributions }) {
+function ContributionChart({ contributions, theme }) {
+  const isDark = theme === "dark";
 
   const data = {
-    labels: Object.keys(contributions),
-
+    labels: Object.keys(contributions || {}),
     datasets: [
       {
         label: "Contributions",
-        data: Object.values(contributions)
+        data: Object.values(contributions || {}),
+        backgroundColor: isDark ? "rgba(236, 72, 153, 0.65)" : "rgba(219, 39, 119, 0.65)",
+        borderColor: isDark ? "#f43f5e" : "#db2777",
+        borderWidth: 1.5,
+        borderRadius: 8, // rounded bars
+        borderSkipped: false,
+        hoverBackgroundColor: isDark ? "rgba(236, 72, 153, 0.85)" : "rgba(219, 39, 119, 0.85)",
       }
     ]
   };
 
-  return (
-    <div className="bg-white p-4 rounded-lg shadow mt-8 w-full max-w-4xl">
-      <h2 className="text-2xl font-bold mb-4">
-        Contribution Activity
-      </h2>
+  const options = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: false, // Hide duplicate legend label since header covers it
+      },
+      tooltip: {
+        backgroundColor: isDark ? "rgba(18, 19, 28, 0.95)" : "rgba(255, 255, 255, 0.95)",
+        titleColor: isDark ? "#ffffff" : "#1e293b",
+        bodyColor: isDark ? "#f43f5e" : "#db2777",
+        borderColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(219, 39, 119, 0.1)",
+        borderWidth: 1,
+        padding: 12,
+        cornerRadius: 12,
+        titleFont: {
+          family: "system-ui, sans-serif",
+          weight: "bold",
+          size: 13
+        },
+        bodyFont: {
+          family: "system-ui, sans-serif",
+          weight: "600",
+          size: 12
+        },
+        displayColors: false,
+      }
+    },
+    scales: {
+      x: {
+        grid: {
+          display: false, // clean vertical spacing
+        },
+        ticks: {
+          color: isDark ? "#94a3b8" : "#64748b",
+          font: {
+            family: "system-ui, sans-serif",
+            weight: "600",
+            size: 11
+          }
+        }
+      },
+      y: {
+        grid: {
+          color: isDark ? "rgba(255, 255, 255, 0.04)" : "rgba(219, 39, 119, 0.04)",
+          drawBorder: false,
+        },
+        ticks: {
+          color: isDark ? "#94a3b8" : "#64748b",
+          font: {
+            family: "system-ui, sans-serif",
+            weight: "600",
+            size: 11
+          },
+          precision: 0
+        }
+      }
+    }
+  };
 
-      <Bar data={data} />
+  return (
+    <div className="w-full h-64 relative mt-2">
+      <Bar data={data} options={options} />
     </div>
   );
 }
 
 export default ContributionChart;
+
+
