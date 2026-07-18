@@ -99,7 +99,8 @@ function DevCard({ user, stats, languages, theme, globalTheme }) {
 
         {/* Score Ring Display inside card */}
         <div className="text-center my-5 py-3 border-y border-white/5 flex flex-col items-center justify-center bg-white/5 rounded-2xl border border-white/5">
-          <span className={`text-4xl font-black bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent`}>
+          {/* FIXED: Replaced gradient text clip with solid text-white for html2canvas compatibility */}
+          <span className="text-4xl font-black text-white">
             {user?.score}
           </span>
           <p className="text-[10px] uppercase tracking-wider text-gray-400 font-extrabold mt-0.5">
