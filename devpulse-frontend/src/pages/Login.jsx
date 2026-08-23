@@ -17,8 +17,7 @@ function Login() {
   const [error, setError] = useState("");
   const [messageType, setMessageType] = useState("success");
   const [loading, setLoading] = useState(false);
-  
-  // Theme state synchronized with localStorage
+
   const [theme, setTheme] = useState(localStorage.getItem("theme") || "dark");
 
   useEffect(() => {
@@ -87,23 +86,37 @@ function Login() {
     localStorage.setItem("theme", newTheme);
   };
 
-  // Helper component to render floating theme toggle on auth screens
+  const inputClass = `w-full p-3 rounded-lg border text-sm font-medium outline-none transition-colors duration-200 ${
+    theme === "dark"
+      ? "bg-white/[0.03] border-white/10 text-white placeholder-slate-500 focus:border-indigo-500"
+      : "bg-slate-50 border-slate-200 text-slate-700 placeholder-slate-400 focus:border-indigo-400"
+  }`;
+  const labelClass = `block text-xs font-medium uppercase tracking-wide mb-1.5 ${
+    theme === "dark" ? "text-slate-400" : "text-slate-500"
+  }`;
+  const cardClass = `p-7 rounded-xl border w-full max-w-sm transition-colors duration-300 ${
+    theme === "dark"
+      ? "bg-[#12131A] border-white/[0.06] text-white"
+      : "bg-white border-slate-200 text-slate-700 shadow-sm"
+  }`;
+  const primaryButtonClass = "w-full p-3 rounded-lg font-semibold mt-5 text-white bg-indigo-500 hover:bg-indigo-600 transition-colors duration-200 disabled:opacity-50 disabled:pointer-events-none";
+
   const ThemeToggle = () => (
     <button
       onClick={toggleTheme}
-      className={`absolute top-6 right-6 p-2.5 rounded-xl border transition-all duration-300 hover:scale-110 active:scale-95 ${
+      className={`absolute top-6 right-6 p-2 rounded-lg border transition-colors duration-200 ${
         theme === "dark"
-          ? "bg-white/5 border-white/10 text-yellow-400 hover:bg-white/10"
-          : "bg-pink-50/50 border-pink-100 text-purple-600 hover:bg-pink-100"
+          ? "bg-white/5 border-white/10 text-slate-300 hover:bg-white/10"
+          : "bg-white border-slate-200 text-slate-500 hover:bg-slate-50"
       }`}
       title={theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
     >
       {theme === "dark" ? (
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m2.828 0l-.707-.707m12.02-12.02l-.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z" />
         </svg>
       ) : (
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
         </svg>
       )}
@@ -112,100 +125,72 @@ function Login() {
 
   // STEP 1 — LOGIN
   if (step === "login") return (
-    <div className={`min-h-screen flex items-center justify-center transition-colors duration-500 relative px-4 ${
-      theme === "dark" ? "bg-[#090A10]" : "bg-[#FFF9FA]"
+    <div className={`min-h-screen flex items-center justify-center transition-colors duration-300 relative px-4 ${
+      theme === "dark" ? "bg-[#0B0C10]" : "bg-[#FAFAFB]"
     }`}>
       <ThemeToggle />
-      
-      <div className={`p-8 rounded-2xl border w-full max-w-md shadow-2xl transition-all duration-300 ${
-        theme === "dark"
-          ? "bg-[#12131C]/90 border-white/5 text-white"
-          : "bg-white border-pink-100 text-slate-700 shadow-pink-100/30"
-      }`}>
-        {/* Brand Header */}
+
+      <div className={cardClass}>
         <div className="text-center mb-6">
-          <div className="inline-flex items-center gap-1.5 justify-center mb-2">
-            <span className="h-2 w-2 rounded-full bg-pink-500 animate-ping"></span>
-            <span className="text-lg font-black bg-gradient-to-r from-pink-500 to-purple-600 bg-clip-text text-transparent">
+          <div className="inline-flex items-center gap-1.5 justify-center mb-3">
+            <span className="h-1.5 w-1.5 rounded-full bg-indigo-500"></span>
+            <span className="text-sm font-semibold text-indigo-500">
               DevPulse
             </span>
           </div>
-          <h1 className="text-3xl font-black tracking-tight">Welcome Back</h1>
-          <p className={`text-xs mt-1.5 ${theme === "dark" ? "text-gray-400" : "text-slate-500"}`}>
+          <h1 className="text-2xl font-semibold tracking-tight">Welcome back</h1>
+          <p className={`text-xs mt-1.5 ${theme === "dark" ? "text-slate-400" : "text-slate-500"}`}>
             Don't have an account?{" "}
-            <span 
-              onClick={() => navigate("/register")} 
-              className="text-pink-500 cursor-pointer font-bold hover:underline"
+            <span
+              onClick={() => navigate("/register")}
+              className="text-indigo-500 cursor-pointer font-medium hover:underline"
             >
               Register
             </span>
           </p>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-3.5">
           <div>
-            <label className={`block text-xs font-bold uppercase tracking-wider mb-1.5 ${
-              theme === "dark" ? "text-gray-400" : "text-slate-500"
-            }`}>Email Address</label>
+            <label className={labelClass}>Email Address</label>
             <input
               type="email"
               placeholder="name@example.com"
               onChange={(e) => setEmail(e.target.value)}
-              className={`w-full p-3.5 rounded-xl border text-sm font-medium outline-none transition-all duration-300 ${
-                theme === "dark"
-                  ? "bg-white/5 border-white/10 text-white placeholder-gray-500 focus:border-pink-500 focus:ring-2 focus:ring-pink-500/20"
-                  : "bg-slate-50 border-pink-100 text-slate-700 placeholder-slate-400 focus:border-pink-400 focus:ring-2 focus:ring-pink-400/20"
-              }`}
+              className={inputClass}
             />
           </div>
 
           <div>
-            <label className={`block text-xs font-bold uppercase tracking-wider mb-1.5 ${
-              theme === "dark" ? "text-gray-400" : "text-slate-500"
-            }`}>Password</label>
+            <label className={labelClass}>Password</label>
             <input
               type="password"
               placeholder="••••••••"
               onChange={(e) => setPassword(e.target.value)}
-              className={`w-full p-3.5 rounded-xl border text-sm font-medium outline-none transition-all duration-300 ${
-                theme === "dark"
-                  ? "bg-white/5 border-white/10 text-white placeholder-gray-500 focus:border-pink-500 focus:ring-2 focus:ring-pink-500/20"
-                  : "bg-slate-50 border-pink-100 text-slate-700 placeholder-slate-400 focus:border-pink-400 focus:ring-2 focus:ring-pink-400/20"
-              }`}
+              className={inputClass}
             />
           </div>
         </div>
 
         {error && (
-          <div className={`mt-5 border rounded-xl p-3 text-xs font-bold ${
+          <div className={`mt-4 border rounded-lg p-2.5 text-xs font-medium ${
             theme === "dark"
               ? "bg-red-500/10 border-red-500/20 text-red-400"
               : "bg-red-50 border-red-100 text-red-600"
           }`}>
-            <div className="flex items-center gap-2">
-              <span>⚠️</span>
-              <p>{error}</p>
-            </div>
+            {error}
           </div>
         )}
 
-        <button
-          onClick={handleLogin}
-          disabled={loading}
-          className={`w-full p-3.5 rounded-xl font-bold mt-6 text-white shadow-lg transition-all duration-300 hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:pointer-events-none ${
-            theme === "dark"
-              ? "bg-gradient-to-r from-pink-500 to-purple-600 shadow-pink-500/20"
-              : "bg-gradient-to-r from-pink-400 to-purple-500 shadow-pink-200"
-          }`}
-        >
+        <button onClick={handleLogin} disabled={loading} className={primaryButtonClass}>
           {loading ? "Logging in..." : "Login"}
         </button>
 
-        <p className="text-center mt-5 text-gray-500 text-xs font-medium">
+        <p className="text-center mt-4 text-slate-400 text-xs">
           Forgot password?{" "}
-          <span 
-            onClick={() => setStep("forgot")} 
-            className="text-pink-500 cursor-pointer font-bold hover:underline"
+          <span
+            onClick={() => setStep("forgot")}
+            className="text-indigo-500 cursor-pointer font-medium hover:underline"
           >
             Reset password
           </span>
@@ -216,42 +201,32 @@ function Login() {
 
   // STEP 2 — ENTER EMAIL FOR OTP
   if (step === "forgot") return (
-    <div className={`min-h-screen flex items-center justify-center transition-colors duration-500 relative px-4 ${
-      theme === "dark" ? "bg-[#090A10]" : "bg-[#FFF9FA]"
+    <div className={`min-h-screen flex items-center justify-center transition-colors duration-300 relative px-4 ${
+      theme === "dark" ? "bg-[#0B0C10]" : "bg-[#FAFAFB]"
     }`}>
       <ThemeToggle />
 
-      <div className={`p-8 rounded-2xl border w-full max-w-md shadow-2xl transition-all duration-300 ${
-        theme === "dark"
-          ? "bg-[#12131C]/90 border-white/5 text-white"
-          : "bg-white border-pink-100 text-slate-700 shadow-pink-100/30"
-      }`}>
+      <div className={cardClass}>
         <div className="text-center mb-6">
-          <h1 className="text-3xl font-black tracking-tight mb-2 text-pink-500">Forgot Password</h1>
-          <p className={`text-xs max-w-xs mx-auto ${theme === "dark" ? "text-gray-400" : "text-slate-500"}`}>
-            Enter your registered email and we will send you an OTP code to reset your password.
+          <h1 className="text-xl font-semibold tracking-tight mb-1.5 text-indigo-500">Forgot Password</h1>
+          <p className={`text-xs max-w-xs mx-auto ${theme === "dark" ? "text-slate-400" : "text-slate-500"}`}>
+            Enter your registered email and we'll send you an OTP to reset your password.
           </p>
         </div>
 
         <div>
-          <label className={`block text-xs font-bold uppercase tracking-wider mb-1.5 ${
-            theme === "dark" ? "text-gray-400" : "text-slate-500"
-          }`}>Email Address</label>
+          <label className={labelClass}>Email Address</label>
           <input
             type="email"
             placeholder="name@example.com"
             value={forgotEmail}
             onChange={(e) => setForgotEmail(e.target.value)}
-            className={`w-full p-3.5 rounded-xl border text-sm font-medium outline-none transition-all duration-300 mb-4 ${
-              theme === "dark"
-                ? "bg-white/5 border-white/10 text-white placeholder-gray-500 focus:border-pink-500 focus:ring-2 focus:ring-pink-500/20"
-                : "bg-slate-50 border-pink-100 text-slate-700 placeholder-slate-400 focus:border-pink-400 focus:ring-2 focus:ring-pink-400/20"
-            }`}
+            className={`${inputClass} mb-4`}
           />
         </div>
 
         {message && (
-          <div className={`mb-4 rounded-xl p-3 text-xs text-center font-bold border ${
+          <div className={`mb-4 rounded-lg p-2.5 text-xs text-center font-medium border ${
             messageType === "success"
               ? theme === "dark"
                 ? "bg-green-500/10 border-green-500/20 text-green-400"
@@ -264,19 +239,12 @@ function Login() {
           </div>
         )}
 
-        <button
-          onClick={handleSendOTP}
-          className={`w-full p-3.5 rounded-xl font-bold text-white shadow-lg transition-all duration-300 hover:scale-[1.02] active:scale-95 ${
-            theme === "dark"
-              ? "bg-gradient-to-r from-pink-500 to-purple-600 shadow-pink-500/20"
-              : "bg-gradient-to-r from-pink-400 to-purple-500 shadow-pink-200"
-          }`}
-        >
+        <button onClick={handleSendOTP} className={primaryButtonClass.replace("mt-5", "mt-0")}>
           Send OTP
         </button>
 
-        <p 
-          className="text-center mt-5 text-gray-500 text-xs font-bold cursor-pointer hover:underline" 
+        <p
+          className="text-center mt-4 text-slate-400 text-xs font-medium cursor-pointer hover:underline"
           onClick={() => setStep("login")}
         >
           ← Back to Login
@@ -287,78 +255,56 @@ function Login() {
 
   // STEP 3 — ENTER OTP + NEW PASSWORD
   if (step === "otp") return (
-    <div className={`min-h-screen flex items-center justify-center transition-colors duration-500 relative px-4 ${
-      theme === "dark" ? "bg-[#090A10]" : "bg-[#FFF9FA]"
+    <div className={`min-h-screen flex items-center justify-center transition-colors duration-300 relative px-4 ${
+      theme === "dark" ? "bg-[#0B0C10]" : "bg-[#FAFAFB]"
     }`}>
       <ThemeToggle />
 
-      <div className={`p-8 rounded-2xl border w-full max-w-md shadow-2xl transition-all duration-300 ${
-        theme === "dark"
-          ? "bg-[#12131C]/90 border-white/5 text-white"
-          : "bg-white border-pink-100 text-slate-700 shadow-pink-100/30"
-      }`}>
+      <div className={cardClass}>
         <div className="text-center mb-5">
-          <h1 className="text-3xl font-black tracking-tight mb-2 text-pink-500">Reset Password</h1>
-          <p className={`text-xs ${theme === "dark" ? "text-gray-400" : "text-slate-500"}`}>
+          <h1 className="text-xl font-semibold tracking-tight mb-1.5 text-indigo-500">Reset Password</h1>
+          <p className={`text-xs ${theme === "dark" ? "text-slate-400" : "text-slate-500"}`}>
             Enter the OTP sent to <b className={theme === "dark" ? "text-white" : "text-slate-700"}>{forgotEmail}</b>
           </p>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-3.5">
           <div>
-            <label className={`block text-xs font-bold uppercase tracking-wider mb-1.5 ${
-              theme === "dark" ? "text-gray-400" : "text-slate-500"
-            }`}>OTP Code</label>
+            <label className={labelClass}>OTP Code</label>
             <input
               type="text"
               placeholder="Enter OTP"
               value={otp}
               onChange={(e) => setOtp(e.target.value)}
-              className={`w-full p-3.5 rounded-xl border text-sm font-medium outline-none transition-all duration-300 ${
-                theme === "dark"
-                  ? "bg-white/5 border-white/10 text-white placeholder-gray-500 focus:border-pink-500 focus:ring-2 focus:ring-pink-500/20"
-                  : "bg-slate-50 border-pink-100 text-slate-700 placeholder-slate-400 focus:border-pink-400 focus:ring-2 focus:ring-pink-400/20"
-              }`}
+              className={inputClass}
             />
           </div>
 
           <div>
-            <label className={`block text-xs font-bold uppercase tracking-wider mb-1.5 ${
-              theme === "dark" ? "text-gray-400" : "text-slate-500"
-            }`}>New Password</label>
+            <label className={labelClass}>New Password</label>
             <input
               type="password"
               placeholder="••••••••"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
-              className={`w-full p-3.5 rounded-xl border text-sm font-medium outline-none transition-all duration-300 ${
-                theme === "dark"
-                  ? "bg-white/5 border-white/10 text-white placeholder-gray-500 focus:border-pink-500 focus:ring-2 focus:ring-pink-500/20"
-                  : "bg-slate-50 border-pink-100 text-slate-700 placeholder-slate-400 focus:border-pink-400 focus:ring-2 focus:ring-pink-400/20"
-              }`}
+              className={inputClass}
             />
           </div>
 
           <div>
-            <label className={`block text-xs font-bold uppercase tracking-wider mb-1.5 ${
-              theme === "dark" ? "text-gray-400" : "text-slate-500"
-            }`}>Confirm New Password</label>
+            <label className={labelClass}>Confirm New Password</label>
             <input
               type="password"
               placeholder="••••••••"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className={`w-full p-3.5 rounded-xl border text-sm font-medium outline-none transition-all duration-300 ${
-                theme === "dark"
-                  ? "bg-white/5 border-white/10 text-white placeholder-gray-500 focus:border-pink-500 focus:ring-2 focus:ring-pink-500/20"
-                  : "bg-slate-50 border-pink-100 text-slate-700 placeholder-slate-400 focus:border-pink-400 focus:ring-2 focus:ring-pink-400/20"
-              }`}
+              className={inputClass}
             />
           </div>
         </div>
 
         {message && (
-          <div className={`mt-4 rounded-xl p-3 text-xs text-center font-bold border ${
+          <div className={`mt-4 rounded-lg p-2.5 text-xs text-center font-medium border ${
             messageType === "success"
               ? theme === "dark"
                 ? "bg-green-500/10 border-green-500/20 text-green-400"
@@ -371,19 +317,12 @@ function Login() {
           </div>
         )}
 
-        <button
-          onClick={handleResetPassword}
-          className={`w-full p-3.5 rounded-xl font-bold mt-6 text-white shadow-lg transition-all duration-300 hover:scale-[1.02] active:scale-95 ${
-            theme === "dark"
-              ? "bg-gradient-to-r from-pink-500 to-purple-600 shadow-pink-500/20"
-              : "bg-gradient-to-r from-pink-400 to-purple-500 shadow-pink-200"
-          }`}
-        >
+        <button onClick={handleResetPassword} className={primaryButtonClass}>
           Reset Password
         </button>
 
-        <p 
-          className="text-center mt-5 text-gray-500 text-xs font-bold cursor-pointer hover:underline" 
+        <p
+          className="text-center mt-4 text-slate-400 text-xs font-medium cursor-pointer hover:underline"
           onClick={() => setStep("login")}
         >
           ← Back to Login
