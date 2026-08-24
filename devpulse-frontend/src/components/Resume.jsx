@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
@@ -50,10 +51,40 @@ function generateAutoSummary(user, stats) {
   return `${parts.join(" ")}. Experienced in building and shipping full-stack applications, with a track record of open-source contribution and hands-on engineering across multiple languages and frameworks.`;
 }
 
+// ── Job description matcher ─────────────────────────────────────────
+// Broad list of tech keywords a job posting might mention — deliberately
+// wider than FRAMEWORK_TOOL_LIST since job postings mention cloud/tools/
+// methodologies that aren't "skills" in the GitHub-language sense.
+const JOB_KEYWORD_LIST = [
+  "JavaScript", "TypeScript", "Python", "Java", "C++", "C#", "Go", "Rust",
+  "Ruby", "PHP", "Swift", "Kotlin", "Dart", "HTML", "CSS", "SQL",
+  "React", "React Native", "Next.js", "Vue", "Angular", "Node.js", "Express",
+  "Flutter", "Django", "Flask", "Spring", "Laravel", "TensorFlow", "PyTorch",
+  "MongoDB", "PostgreSQL", "MySQL", "Redis", "Firebase", "Docker", "Kubernetes",
+  "Git", "GraphQL", "REST", "Redux", "Tailwind", "Bootstrap", "jQuery",
+  "Webpack", "Jest", "AWS", "Azure", "GCP", "CI/CD", "Jenkins", "Terraform",
+  "Agile", "Scrum", "Linux", "Kafka", "Microservices",
+];
+
+// Extracts which known tech keywords appear in a block of free text (a job
+// posting). Word-boundary, case-insensitive match so "Go" doesn't match
+// inside "Google" etc.
+function extractKeywords(text) {
+  if (!text) return [];
+  const found = [];
+  JOB_KEYWORD_LIST.forEach((keyword) => {
+    const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const pattern = new RegExp(`(^|[^a-zA-Z0-9])${escaped}([^a-zA-Z0-9]|$)`, "i");
+    if (pattern.test(text)) found.push(keyword);
+  });
+  return found;
+}
+
 function getInitials(name) {
   if (!name) return "??";
   return name.split(" ").filter(Boolean).slice(0, 2).map((n) => n[0].toUpperCase()).join("");
 }
+
 
 // ── Editable primitive ─────────────────────────────────────────────
 // Uncontrolled contentEditable text — renders the initial value once,
@@ -96,6 +127,52 @@ function Resume({ user, stats, languages, repos, globalTheme }) {
   const { languages: extraLangs, frameworksTools: extraFwTools } = categorizeSkills(extraSkills);
   const finalLanguages = [...new Set([...langSkills, ...extraLangs])];
   const finalFrameworksTools = [...new Set([...frameworksTools, ...extraFwTools])];
+
+  // ── Job description matcher ──
+  const [jobDescription, setJobDescription] = useState("");
+  const [showMatcher, setShowMatcher] = useState(false);
+  const [matchResults, setMatchResults] = useState(null); // { matched: [], missing: [], score: 0 }
+
+  const runMatch = () => {
+    const jobKeywords = extractKeywords(jobDescription);
+    if (jobKeywords.length === 0) {
+      setMatchResults({ matched: [], missing: [], score: 0, empty: true });
+      return;
+    }
+    const userSkillsLower = new Set(
+      [...finalLanguages, ...finalFrameworksTools].map((s) => s.toLowerCase())
+    );
+    const matched = jobKeywords.filter((k) => userSkillsLower.has(k.toLowerCase()));
+    const missing = jobKeywords.filter((k) => !userSkillsLower.has(k.toLowerCase()));
+    const score = Math.round((matched.length / jobKeywords.length) * 100);
+    setMatchResults({ matched, missing, score, empty: false });
+  };
+
+  const clearMatch = () => {
+    setMatchResults(null);
+    setJobDescription("");
+  };
+
+  const matchedLower = matchResults ? matchResults.matched.map((m) => m.toLowerCase()) : [];
+
+  // Reordered skill lists — matched skills float to the top when a job's been analyzed
+  const orderedLanguages = matchResults
+    ? [...finalLanguages].sort((a, b) => matchedLower.includes(b.toLowerCase()) - matchedLower.includes(a.toLowerCase()))
+    : finalLanguages;
+  const orderedFrameworksTools = matchResults
+    ? [...finalFrameworksTools].sort((a, b) => matchedLower.includes(b.toLowerCase()) - matchedLower.includes(a.toLowerCase()))
+    : finalFrameworksTools;
+
+  // Reordered projects — ones whose language/description touch a matched
+  // skill move up, so the most job-relevant project leads the resume
+  const scoreProject = (repo) => {
+    if (!matchResults) return 0;
+    const haystack = `${repo.language || ""} ${repo.description || ""}`.toLowerCase();
+    return matchedLower.filter((m) => haystack.includes(m)).length;
+  };
+  const orderedProjects = matchResults
+    ? [...topProjects].sort((a, b) => scoreProject(b) - scoreProject(a))
+    : topProjects;
 
   const displayName = user?.name || "Your Name";
   const summarySeed = generateAutoSummary(user, stats);
@@ -281,6 +358,122 @@ function Resume({ user, stats, languages, repos, globalTheme }) {
         </p>
       )}
 
+      {/* ── Job Description Matcher — outside the printed resume ── */}
+      <div className={`mb-6 p-4 rounded-xl border transition-colors duration-300 ${
+        isDark ? "bg-[#12131A] border-white/[0.06]" : "bg-white border-slate-200 shadow-sm"
+      }`}>
+        <div className="flex items-center justify-between mb-2">
+          <h3 className={`text-sm font-semibold ${isDark ? "text-white" : "text-slate-800"}`}>
+            Match this resume to a job
+          </h3>
+          {!showMatcher && (
+            <button
+              onClick={() => setShowMatcher(true)}
+              className="text-xs font-medium text-indigo-500 hover:text-indigo-600"
+            >
+              + Paste a job description
+            </button>
+          )}
+          {showMatcher && !matchResults && (
+            <button
+              onClick={() => setShowMatcher(false)}
+              className="text-xs font-medium text-slate-400 hover:text-slate-500"
+            >
+              ✕ close
+            </button>
+          )}
+        </div>
+
+        {!showMatcher && !matchResults && (
+          <p className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+            Paste the full job posting (requirements and responsibilities, not just the title) and this resume will highlight your matching skills and reorder itself to lead with them.
+          </p>
+        )}
+
+        {showMatcher && !matchResults && (
+          <div>
+            <textarea
+              value={jobDescription}
+              onChange={(e) => setJobDescription(e.target.value)}
+              placeholder="Paste the full job posting here — including the requirements or qualifications section. A job title alone (e.g. 'Software Engineer') won't have enough detail to match against."
+              className={`w-full h-28 p-3 rounded-lg border text-xs outline-none resize-none ${
+                isDark
+                  ? "bg-white/[0.03] border-white/10 text-white placeholder-slate-500 focus:border-indigo-500"
+                  : "bg-slate-50 border-slate-200 text-slate-700 placeholder-slate-400 focus:border-indigo-400"
+              }`}
+            />
+            <button
+              onClick={runMatch}
+              disabled={jobDescription.trim().length < 40}
+              className="mt-2.5 px-4 py-2 rounded-lg text-xs font-semibold text-white bg-indigo-500 hover:bg-indigo-600 transition-colors duration-200 disabled:opacity-40 disabled:pointer-events-none"
+            >
+              Analyze match
+            </button>
+          </div>
+        )}
+
+        {matchResults && matchResults.empty && (
+          <div>
+            <p className={`text-xs mb-1 font-medium ${isDark ? "text-slate-300" : "text-slate-600"}`}>
+              Couldn't find any specific technologies in that text.
+            </p>
+            <p className={`text-xs mb-2.5 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+              This usually happens when only a job title is pasted (e.g. "Backend Developer") instead of the full posting. Go back to the job listing and paste the requirements or qualifications section too — that's where specific tools and languages are usually named.
+            </p>
+            <button onClick={clearMatch} className="text-xs font-medium text-indigo-500 hover:text-indigo-600">
+              Try again
+            </button>
+          </div>
+        )}
+
+        {matchResults && !matchResults.empty && (
+          <div>
+            <div className="flex items-baseline gap-2 mb-3">
+              <span className="text-2xl font-semibold text-indigo-500">{matchResults.score}%</span>
+              <span className={`text-xs ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                match — resume reordered to lead with your matching skills
+              </span>
+            </div>
+
+            {matchResults.matched.length > 0 && (
+              <div className="mb-2.5">
+                <p className={`text-[10px] font-semibold uppercase tracking-wide mb-1.5 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                  Matched
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {matchResults.matched.map((skill, i) => (
+                    <span key={i} className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-green-500/10 text-green-500 border border-green-500/20">
+                      ✓ {skill}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {matchResults.missing.length > 0 && (
+              <div className="mb-3">
+                <p className={`text-[10px] font-semibold uppercase tracking-wide mb-1.5 ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                  Not found on your profile
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {matchResults.missing.map((skill, i) => (
+                    <span key={i} className={`px-2 py-0.5 rounded-full text-[10px] font-medium border ${
+                      isDark ? "bg-white/5 text-slate-400 border-white/10" : "bg-slate-50 text-slate-500 border-slate-200"
+                    }`}>
+                      {skill}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <button onClick={clearMatch} className="text-xs font-medium text-indigo-500 hover:text-indigo-600">
+              Clear and try another job
+            </button>
+          </div>
+        )}
+      </div>
+
       {/* Download Button */}
       <div className="flex justify-end mb-6">
         <button onClick={downloadPDF}
@@ -332,11 +525,11 @@ function Resume({ user, stats, languages, repos, globalTheme }) {
                 <AddTrigger label="skill" formKey="skill" dark />
               </div>
               <SkillForm dark />
-              {finalLanguages.length > 0 && (
+              {orderedLanguages.length > 0 && (
                 <div className="mb-4">
                   <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-300 mb-1.5">Languages</p>
                   <div className="flex flex-wrap gap-1.5">
-                    {finalLanguages.map((skill, i) => (
+                    {orderedLanguages.map((skill, i) => (
                       <span key={i} className="bg-slate-700 text-slate-200 px-2 py-1 rounded text-[10px] font-semibold">
                         <Editable initialValue={skill} isPrinting={isPrinting} />
                       </span>
@@ -344,11 +537,11 @@ function Resume({ user, stats, languages, repos, globalTheme }) {
                   </div>
                 </div>
               )}
-              {finalFrameworksTools.length > 0 && (
+              {orderedFrameworksTools.length > 0 && (
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-300 mb-1.5">Frameworks &amp; Tools</p>
                   <div className="flex flex-wrap gap-1.5">
-                    {finalFrameworksTools.map((skill, i) => (
+                    {orderedFrameworksTools.map((skill, i) => (
                       <span key={i} className="bg-slate-700 text-slate-200 px-2 py-1 rounded text-[10px] font-semibold">
                         <Editable initialValue={skill} isPrinting={isPrinting} />
                       </span>
@@ -453,11 +646,11 @@ function Resume({ user, stats, languages, repos, globalTheme }) {
               )}
             </div>
 
-            {topProjects.length > 0 && (
+            {orderedProjects.length > 0 && (
               <div>
                 <h2 className="text-[13px] font-bold uppercase tracking-[0.12em] text-slate-800 border-b-2 border-slate-800 pb-1.5 mb-3">Key Projects</h2>
                 <div className="space-y-4">
-                  {topProjects.map((repo) => {
+                  {orderedProjects.map((repo) => {
                     const bullets = generateProjectBullets(repo);
                     return (
                       <div key={repo.name}>
@@ -517,7 +710,7 @@ function Resume({ user, stats, languages, repos, globalTheme }) {
           </div>
 
           {/* Skills */}
-          {(finalLanguages.length > 0 || finalFrameworksTools.length > 0 || !isPrinting) && (
+          {(orderedLanguages.length > 0 || orderedFrameworksTools.length > 0 || !isPrinting) && (
             <div className="mb-4">
               <div className="flex items-baseline flex-wrap">
                 <h2 className="text-[13px] font-bold uppercase border-b border-black pb-1 mb-2 flex-1">Skills</h2>
@@ -525,11 +718,11 @@ function Resume({ user, stats, languages, repos, globalTheme }) {
               </div>
               <SkillForm />
               <div className="text-[12.5px] leading-relaxed space-y-1">
-                {finalLanguages.length > 0 && (
-                  <p><span className="font-bold">Languages: </span>{finalLanguages.join(", ")}</p>
+                {orderedLanguages.length > 0 && (
+                  <p><span className="font-bold">Languages: </span>{orderedLanguages.join(", ")}</p>
                 )}
-                {finalFrameworksTools.length > 0 && (
-                  <p><span className="font-bold">Frameworks &amp; Tools: </span>{finalFrameworksTools.join(", ")}</p>
+                {orderedFrameworksTools.length > 0 && (
+                  <p><span className="font-bold">Frameworks &amp; Tools: </span>{orderedFrameworksTools.join(", ")}</p>
                 )}
               </div>
             </div>
@@ -607,11 +800,11 @@ function Resume({ user, stats, languages, repos, globalTheme }) {
           )}
 
           {/* Projects */}
-          {topProjects.length > 0 && (
+          {orderedProjects.length > 0 && (
             <div className="mb-4">
               <h2 className="text-[13px] font-bold uppercase border-b border-black pb-1 mb-2">Projects</h2>
               <div className="space-y-3">
-                {topProjects.map((repo) => {
+                {orderedProjects.map((repo) => {
                   const bullets = generateProjectBullets(repo);
                   return (
                     <div key={repo.name}>
