@@ -121,6 +121,7 @@ app.get("/api/user/:username", async (req, res) => {
             followers: data.followers,
             location: data.location,
             joined: data.created_at,
+            email: data.email,   
             score: score
         };
 
@@ -351,6 +352,130 @@ app.get("/api/pullrequests/:username", async (req, res) => {
         res.json({
             totalPullRequests: response.data.total_count
         });
+
+    } catch (error) {
+        res.status(500).json({
+            error: error.message
+        });
+    }
+});
+
+
+// ══════════════════════════════════════════════════════════════════
+// ADD THIS ROUTE to your server.js, near your existing
+// /api/contributions/:username route (they use the same GitHub
+// GraphQL query — this one just keeps the daily data instead of
+// collapsing it down to monthly totals).
+// ══════════════════════════════════════════════════════════════════
+
+// HEATMAP DATA — full year of daily contribution counts, GitHub-style
+app.get("/api/heatmap/:username", async (req, res) => {
+  try {
+    const username = req.params.username;
+
+    const query = {
+      query: `
+      {
+        user(login: "${username}") {
+          contributionsCollection {
+            contributionCalendar {
+              totalContributions
+              weeks {
+                contributionDays {
+                  contributionCount
+                  date
+                }
+              }
+            }
+          }
+        }
+      }
+      `
+    };
+
+    const response = await axios.post(
+      "https://api.github.com/graphql",
+      query,
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.GITHUB_TOKEN}`
+        }
+      }
+    );
+
+    const calendar = response.data.data.user.contributionsCollection.contributionCalendar;
+
+    // Flatten into a simple array of { date, count } — easiest shape
+    // for the frontend to render into a grid
+    const days = [];
+    calendar.weeks.forEach((week) => {
+      week.contributionDays.forEach((day) => {
+        days.push({
+          date: day.date,
+          count: day.contributionCount
+        });
+      });
+    });
+
+    res.json({
+      totalContributions: calendar.totalContributions,
+      days
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      error: error.message
+    });
+  }
+});
+
+// ACTIVITY DATA — commit dates + messages, for streaks/time patterns/message quality
+app.get("/api/activity/:username", async (req, res) => {
+    try {
+        const username = req.params.username;
+
+        const reposRes = await axios.get(
+            `https://api.github.com/users/${username}/repos`,
+            {
+                headers: {
+                    Authorization: `token ${process.env.GITHUB_TOKEN}`
+                }
+            }
+        );
+
+        const repos = reposRes.data;
+        let commitLog = [];
+
+        // Pull up to 30 recent commits per repo (keeps this fast and avoids
+        // hitting GitHub's rate limit on users with many repos). Capped at
+        // 300 commits total across all repos.
+        await Promise.all(
+            repos.map(async (repo) => {
+                if (commitLog.length >= 300) return;
+                try {
+                    const commitRes = await axios.get(
+                        `https://api.github.com/repos/${username}/${repo.name}/commits`,
+                        {
+                            params: { per_page: 30, author: username },
+                            headers: {
+                                Authorization: `token ${process.env.GITHUB_TOKEN}`
+                            }
+                        }
+                    );
+
+                    commitRes.data.forEach((commit) => {
+                        commitLog.push({
+                            date: commit.commit.author.date,
+                            message: commit.commit.message.split("\n")[0], // first line only
+                        });
+                    });
+                } catch (err) {
+                    // Skip repos with no commits or access issues
+                }
+            })
+        );
+
+        res.json({ commits: commitLog });
 
     } catch (error) {
         res.status(500).json({

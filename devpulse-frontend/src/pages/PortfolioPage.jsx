@@ -82,6 +82,7 @@ function PortfolioPage() {
   const [stats, setStats] = useState(null);
   const [theme, setTheme] = useState(localStorage.getItem("theme") || "dark");
   const [copied, setCopied] = useState(false);
+  const [copiedEmail, setCopiedEmail] = useState(false);
 
   useEffect(() => {
     axios
@@ -131,6 +132,13 @@ function PortfolioPage() {
     navigator.clipboard.writeText(url);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const copyEmail = () => {
+    if (!user?.email) return;
+    navigator.clipboard.writeText(user.email);
+    setCopiedEmail(true);
+    setTimeout(() => setCopiedEmail(false), 2000);
   };
 
   const isDark = theme === "dark";
@@ -312,8 +320,8 @@ function PortfolioPage() {
             </a>
 
             {user.email && (
-              <a
-                href={`mailto:${user.email}?subject=Let's connect&body=Hi ${user.name || user.username}, I came across your DevPulse portfolio...`}
+              <button
+                onClick={copyEmail}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-semibold border transition-colors duration-200 ${
                   isDark ? "bg-white/5 border-white/10 text-white hover:bg-white/10" : "bg-white border-slate-200 text-slate-700 hover:bg-slate-100"
                 }`}
@@ -321,8 +329,8 @@ function PortfolioPage() {
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                 </svg>
-                Email
-              </a>
+                {copiedEmail ? "Email Copied!" : "Copy Email"}
+              </button>
             )}
 
             <button
