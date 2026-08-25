@@ -360,6 +360,80 @@ app.get("/api/pullrequests/:username", async (req, res) => {
     }
 });
 
+// ══════════════════════════════════════════════════════════════════
+// ADD THIS ROUTE to your server.js, near your other repo-related
+// routes (e.g. after /api/repos/:username).
+//
+// Scores each repo 0-100 on real maintenance signals instead of star
+// count: does it have a README, a license, and was it touched
+// recently. Returns per-repo results so the frontend can show exactly
+// what's missing on each project.
+// ══════════════════════════════════════════════════════════════════
+
+app.get("/api/repo-health/:username", async (req, res) => {
+    try {
+        const username = req.params.username;
+
+        const reposRes = await axios.get(
+            `https://api.github.com/users/${username}/repos`,
+            {
+                headers: {
+                    Authorization: `token ${process.env.GITHUB_TOKEN}`
+                }
+            }
+        );
+
+        const repos = reposRes.data;
+        const sixMonthsAgo = new Date();
+        sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+        const healthResults = await Promise.all(
+            repos.map(async (repo) => {
+                let hasReadme = false;
+                try {
+                    await axios.get(
+                        `https://api.github.com/repos/${username}/${repo.name}/readme`,
+                        {
+                            headers: {
+                                Authorization: `token ${process.env.GITHUB_TOKEN}`
+                            }
+                        }
+                    );
+                    hasReadme = true;
+                } catch (err) {
+                    hasReadme = false; // 404 means no README
+                }
+
+                const hasLicense = !!repo.license;
+                const hasDescription = !!(repo.description && repo.description.trim().length > 0);
+                const isRecent = new Date(repo.pushed_at) >= sixMonthsAgo;
+
+                let score = 0;
+                if (hasReadme) score += 40;
+                if (hasLicense) score += 25;
+                if (isRecent) score += 25;
+                if (hasDescription) score += 10;
+
+                return {
+                    name: repo.name,
+                    score,
+                    hasReadme,
+                    hasLicense,
+                    hasDescription,
+                    isRecent,
+                    lastPush: repo.pushed_at
+                };
+            })
+        );
+
+        res.json({ repos: healthResults });
+
+    } catch (error) {
+        res.status(500).json({
+            error: error.message
+        });
+    }
+});
 
 // ══════════════════════════════════════════════════════════════════
 // ADD THIS ROUTE to your server.js, near your existing

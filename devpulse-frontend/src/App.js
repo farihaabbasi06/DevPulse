@@ -3,6 +3,7 @@ import { Navigate } from "react-router-dom";
 import axios from "axios";
 import LanguageChart from "./components/LanguageChart";
 import AchievementBadges from "./components/AchievementBadges";
+import RepositoryHealth from "./components/RepositoryHealth";
 import ActivityInsights from "./components/ActivityInsights";
 import ContributionHeatmap from "./components/ContributionHeatmap";
 import ScoreRing from "./components/ScoreRing";
@@ -482,6 +483,7 @@ function App() {
                           <div className="w-full max-w-4xl mt-4 grid grid-cols-1 gap-4">
                             <AchievementBadges stats={stats} languages={languages} repos={repos} user={user} theme={theme} />
                             <ActivityInsights username={user?.username} theme={theme} />
+                            <RepositoryHealth username={user?.username} theme={theme} />
                           </div>
 
                           {/* Charts and Analytics */}
