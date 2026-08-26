@@ -360,6 +360,157 @@ app.get("/api/pullrequests/:username", async (req, res) => {
     }
 });
 
+
+// ══════════════════════════════════════════════════════════════════
+// ADD THIS ROUTE to your server.js, near your other GraphQL-based
+// routes (contributions/heatmap).
+//
+// Fetches the repos a user has manually "pinned" on their GitHub
+// profile — the ones they specifically chose to showcase, as opposed
+// to whatever happens to have the most stars.
+// ══════════════════════════════════════════════════════════════════
+
+app.get("/api/pinned/:username", async (req, res) => {
+  try {
+    const username = req.params.username;
+
+    const query = {
+      query: `
+      {
+        user(login: "${username}") {
+          pinnedItems(first: 6, types: REPOSITORY) {
+            nodes {
+              ... on Repository {
+                name
+                description
+                url
+                stargazerCount
+                primaryLanguage {
+                  name
+                }
+              }
+            }
+          }
+        }
+      }
+      `
+    };
+
+    const response = await axios.post(
+      "https://api.github.com/graphql",
+      query,
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.GITHUB_TOKEN}`
+        }
+      }
+    );
+
+    const nodes = response.data.data.user.pinnedItems.nodes;
+
+    const pinned = nodes.map((repo) => ({
+      name: repo.name,
+      description: repo.description,
+      url: repo.url,
+      stars: repo.stargazerCount,
+      language: repo.primaryLanguage ? repo.primaryLanguage.name : null
+    }));
+
+    res.json({ pinned });
+
+  } catch (error) {
+    res.status(500).json({
+      error: error.message
+    });
+  }
+});
+
+// ══════════════════════════════════════════════════════════════════
+// ADD THIS to your server.js:
+// 1. At the top, alongside your other requires:
+//      const VerifiedProfile = require("./models/VerifiedProfile");
+// 2. These three routes, anywhere with your other app.get() routes.
+//
+// Requires GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET, and FRONTEND_URL
+// in your .env (see setup instructions).
+// ══════════════════════════════════════════════════════════════════
+
+// STEP 1 — redirect the user to GitHub's own login/authorize page
+app.get("/api/auth/github/login", (req, res) => {
+  const redirectUri = `${req.protocol}://${req.get("host")}/api/auth/github/callback`;
+  const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${process.env.GITHUB_CLIENT_ID}&scope=read:user&redirect_uri=${encodeURIComponent(redirectUri)}`;
+  res.redirect(githubAuthUrl);
+});
+
+// STEP 2 — GitHub redirects back here with a temporary code. Exchange
+// it for an access token, use that token to ask GitHub "who is this,
+// really" (this is the part that can't be faked), then mark that
+// GitHub username as verified in the database.
+app.get("/api/auth/github/callback", async (req, res) => {
+  try {
+    const code = req.query.code;
+    if (!code) {
+      return res.redirect(`${process.env.FRONTEND_URL}/?verifyError=missing_code`);
+    }
+
+    const redirectUri = `${req.protocol}://${req.get("host")}/api/auth/github/callback`;
+
+    const tokenResponse = await axios.post(
+      "https://github.com/login/oauth/access_token",
+      {
+        client_id: process.env.GITHUB_CLIENT_ID,
+        client_secret: process.env.GITHUB_CLIENT_SECRET,
+        code,
+        redirect_uri: redirectUri
+      },
+      {
+        headers: { Accept: "application/json" }
+      }
+    );
+
+    const accessToken = tokenResponse.data.access_token;
+    if (!accessToken) {
+      return res.redirect(`${process.env.FRONTEND_URL}/?verifyError=token_failed`);
+    }
+
+    // This is the trust-proving step — GitHub tells us the real
+    // logged-in username using the token that only that person's
+    // browser session could have obtained
+    const githubUserResponse = await axios.get("https://api.github.com/user", {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+
+    const githubUsername = githubUserResponse.data.login;
+
+    await VerifiedProfile.findOneAndUpdate(
+      { githubUsername: githubUsername.toLowerCase() },
+      { githubUsername: githubUsername.toLowerCase(), verifiedAt: new Date() },
+      { upsert: true }
+    );
+
+    res.redirect(`${process.env.FRONTEND_URL}/?verified=${githubUsername}`);
+
+  } catch (error) {
+    console.error("GitHub OAuth error:", error.message);
+    res.redirect(`${process.env.FRONTEND_URL}/?verifyError=server_error`);
+  }
+});
+
+// STEP 3 — any page (Dashboard, Portfolio) calls this to check whether
+// the username currently being viewed has ever verified itself
+app.get("/api/verified/:username", async (req, res) => {
+  try {
+    const username = req.params.username.toLowerCase();
+    const record = await VerifiedProfile.findOne({ githubUsername: username });
+    res.json({
+      verified: !!record,
+      verifiedAt: record ? record.verifiedAt : null
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // ══════════════════════════════════════════════════════════════════
 // ADD THIS ROUTE to your server.js, near your other repo-related
 // routes (e.g. after /api/repos/:username).
