@@ -18,16 +18,27 @@ function getScoreBarColor(score) {
 function RepositoryHealth({ username, theme }) {
   const [healthData, setHealthData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [expanded, setExpanded] = useState(false);
 
-  useEffect(() => {
+  const fetchHealth = (forceRefresh = false) => {
     if (!username) return;
-    setLoading(true);
+    if (forceRefresh) setRefreshing(true);
+    else setLoading(true);
+
     axios
-      .get(`${API_URL}/repo-health/${username}`)
+      .get(`${API_URL}/repo-health/${username}${forceRefresh ? "?refresh=true" : ""}`)
       .then((res) => setHealthData(res.data.repos || []))
       .catch(() => setHealthData([]))
-      .finally(() => setLoading(false));
+      .finally(() => {
+        setLoading(false);
+        setRefreshing(false);
+      });
+  };
+
+  useEffect(() => {
+    fetchHealth(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [username]);
 
   const isDark = theme === "dark";
@@ -56,7 +67,19 @@ function RepositoryHealth({ username, theme }) {
   return (
     <div className={cardClass}>
       <div className="flex items-center justify-between mb-1">
-        <h3 className="text-sm font-semibold text-slate-400">Repository Health</h3>
+        <div className="flex items-center gap-2">
+          <h3 className="text-sm font-semibold text-slate-400">Repository Health</h3>
+          <button
+            onClick={() => fetchHealth(true)}
+            disabled={refreshing}
+            className="text-slate-400 hover:text-indigo-500 transition-colors disabled:opacity-40"
+            title="Refresh — fetch the latest data from GitHub now"
+          >
+            <svg className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          </button>
+        </div>
         <span className={`text-xs font-semibold ${getScoreColor(avgScore)}`}>{avgScore}/100 avg</span>
       </div>
       <p className={`text-xs mb-4 ${mutedText}`}>

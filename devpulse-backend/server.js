@@ -10,6 +10,7 @@ const cors = require("cors");
 const calculateScore = require("./utils/scoreCalculator");
 const app = express();
 const router = express.Router();
+const CachedData = require("./models/CachedData");
 
 // Middleware
 app.use(cors());
@@ -363,17 +364,22 @@ app.get("/api/pullrequests/:username", async (req, res) => {
 
 
 // ══════════════════════════════════════════════════════════════════
-// ADD THIS ROUTE to your server.js, near your other GraphQL-based
-// routes (contributions/heatmap).
-//
-// Fetches the repos a user has manually "pinned" on their GitHub
-// profile — the ones they specifically chose to showcase, as opposed
-// to whatever happens to have the most stars.
+// REPLACES the previous /api/pinned/:username route entirely.
+// Same caching pattern as repo-health — checks cache first, add
+// ?refresh=true to force a fresh fetch.
 // ══════════════════════════════════════════════════════════════════
 
 app.get("/api/pinned/:username", async (req, res) => {
   try {
-    const username = req.params.username;
+    const username = req.params.username.toLowerCase();
+    const forceRefresh = req.query.refresh === "true";
+
+    if (!forceRefresh) {
+      const cached = await CachedData.findOne({ username, type: "pinned" });
+      if (cached && (Date.now() - new Date(cached.fetchedAt).getTime()) < CACHE_DURATION_MS) {
+        return res.json({ pinned: cached.data, cached: true, fetchedAt: cached.fetchedAt });
+      }
+    }
 
     const query = {
       query: `
@@ -417,7 +423,13 @@ app.get("/api/pinned/:username", async (req, res) => {
       language: repo.primaryLanguage ? repo.primaryLanguage.name : null
     }));
 
-    res.json({ pinned });
+    await CachedData.findOneAndUpdate(
+      { username, type: "pinned" },
+      { username, type: "pinned", data: pinned, fetchedAt: new Date() },
+      { upsert: true }
+    );
+
+    res.json({ pinned, cached: false, fetchedAt: new Date() });
 
   } catch (error) {
     res.status(500).json({
@@ -549,18 +561,30 @@ app.get("/api/verified/:username", async (req, res) => {
 });
 
 // ══════════════════════════════════════════════════════════════════
-// ADD THIS ROUTE to your server.js, near your other repo-related
-// routes (e.g. after /api/repos/:username).
+// REPLACES the previous /api/repo-health/:username route entirely.
 //
-// Scores each repo 0-100 on real maintenance signals instead of star
-// count: does it have a README, a license, and was it touched
-// recently. Returns per-repo results so the frontend can show exactly
-// what's missing on each project.
+// Now checks the cache first — if data was fetched within the last
+// hour, returns that instantly instead of re-hitting GitHub. Add
+// ?refresh=true to the request to force a fresh fetch regardless of
+// cache age (used by the "Refresh" button in RepositoryHealth.jsx).
+//
+// Also requires: const CachedData = require("./models/CachedData");
+// at the top of server.js, alongside your other requires.
 // ══════════════════════════════════════════════════════════════════
+
+const CACHE_DURATION_MS = 60 * 60 * 1000; // 1 hour
 
 app.get("/api/repo-health/:username", async (req, res) => {
     try {
-        const username = req.params.username;
+        const username = req.params.username.toLowerCase();
+        const forceRefresh = req.query.refresh === "true";
+
+        if (!forceRefresh) {
+            const cached = await CachedData.findOne({ username, type: "repo-health" });
+            if (cached && (Date.now() - new Date(cached.fetchedAt).getTime()) < CACHE_DURATION_MS) {
+                return res.json({ repos: cached.data, cached: true, fetchedAt: cached.fetchedAt });
+            }
+        }
 
         const reposRes = await axios.get(
             `https://api.github.com/users/${username}/repos`,
@@ -589,7 +613,7 @@ app.get("/api/repo-health/:username", async (req, res) => {
                     );
                     hasReadme = true;
                 } catch (err) {
-                    hasReadme = false; // 404 means no README
+                    hasReadme = false;
                 }
 
                 const hasLicense = !!repo.license;
@@ -614,7 +638,13 @@ app.get("/api/repo-health/:username", async (req, res) => {
             })
         );
 
-        res.json({ repos: healthResults });
+        await CachedData.findOneAndUpdate(
+            { username, type: "repo-health" },
+            { username, type: "repo-health", data: healthResults, fetchedAt: new Date() },
+            { upsert: true }
+        );
+
+        res.json({ repos: healthResults, cached: false, fetchedAt: new Date() });
 
     } catch (error) {
         res.status(500).json({

@@ -1,6 +1,3 @@
-
-
-
 import { useParams } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
 import axios from "axios";
@@ -83,6 +80,7 @@ function PortfolioPage() {
   const [user, setUser] = useState(null);
   const [repos, setRepos] = useState([]);
   const [pinnedRepos, setPinnedRepos] = useState([]);
+  const [refreshingPinned, setRefreshingPinned] = useState(false);
   const [languages, setLanguages] = useState({});
   const [stats, setStats] = useState(null);
   const [theme, setTheme] = useState(localStorage.getItem("theme") || "dark");
@@ -151,6 +149,16 @@ function PortfolioPage() {
     navigator.clipboard.writeText(user.email);
     setCopiedEmail(true);
     setTimeout(() => setCopiedEmail(false), 2000);
+  };
+
+  const refreshPinned = () => {
+    if (!username) return;
+    setRefreshingPinned(true);
+    axios
+      .get(`${API_URL}/pinned/${username}?refresh=true`)
+      .then((res) => setPinnedRepos(res.data.pinned || []))
+      .catch(() => {})
+      .finally(() => setRefreshingPinned(false));
   };
 
   const isDark = theme === "dark";
@@ -283,9 +291,21 @@ function PortfolioPage() {
               <h2 className={`text-xs font-semibold uppercase tracking-widest ${mutedText}`}>
                 Selected Work
               </h2>
-              <span className={`text-[10px] ${mutedText}`}>
-                {pinnedRepos.length > 0 ? "Pinned on GitHub" : "Sorted by stars"}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className={`text-[10px] ${mutedText}`}>
+                  {pinnedRepos.length > 0 ? "Pinned on GitHub" : "Sorted by stars"}
+                </span>
+                <button
+                  onClick={refreshPinned}
+                  disabled={refreshingPinned}
+                  className={`${mutedText} hover:text-indigo-500 transition-colors disabled:opacity-40`}
+                  title="Refresh — fetch the latest from GitHub now"
+                >
+                  <svg className={`w-3 h-3 ${refreshingPinned ? "animate-spin" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                </button>
+              </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4" style={{ perspective: "1200px" }}>
               {topProjects.map((repo) => (
