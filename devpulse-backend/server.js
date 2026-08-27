@@ -2,6 +2,7 @@ require("dotenv").config();
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("./models/User");
+const VerifiedProfile = require("./models/VerifiedProfile");
 const axios = require("axios");
 const express = require("express");
 const mongoose = require("mongoose");
@@ -426,32 +427,67 @@ app.get("/api/pinned/:username", async (req, res) => {
 });
 
 // ══════════════════════════════════════════════════════════════════
-// ADD THIS to your server.js:
-// 1. At the top, alongside your other requires:
-//      const VerifiedProfile = require("./models/VerifiedProfile");
-// 2. These three routes, anywhere with your other app.get() routes.
+// REPLACES the previous backend-oauth-routes.js entirely.
 //
-// Requires GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET, and FRONTEND_URL
-// in your .env (see setup instructions).
+// Difference from before: verification is now tied to whichever
+// DevPulse account is logged in when "Verify Profile" is clicked —
+// not a standalone fact anyone could trigger. This uses your existing
+// JWT_SECRET, no new dependencies needed.
+//
+// You can now DELETE the separate VerifiedProfile model/collection if
+// you already added it — this version stores verification directly
+// on the User document instead. (Remove the
+// `const VerifiedProfile = require("./models/VerifiedProfile");` line
+// if you added it, and add the two fields from
+// user-model-addition.js to your existing User model instead.)
 // ══════════════════════════════════════════════════════════════════
 
-// STEP 1 — redirect the user to GitHub's own login/authorize page
+// STEP 1 — redirect to GitHub, carrying the current user's DevPulse
+// login token through GitHub's own `state` parameter so we know who
+// to verify when they come back
 app.get("/api/auth/github/login", (req, res) => {
+  const devPulseToken = req.query.token;
+
+  if (!devPulseToken) {
+    return res.redirect(`${process.env.FRONTEND_URL}/?verifyError=not_logged_in`);
+  }
+
+  // Confirm it's a real, currently-valid DevPulse session before
+  // sending them to GitHub at all
+  try {
+    jwt.verify(devPulseToken, process.env.JWT_SECRET);
+  } catch (err) {
+    return res.redirect(`${process.env.FRONTEND_URL}/?verifyError=invalid_session`);
+  }
+
   const redirectUri = `${req.protocol}://${req.get("host")}/api/auth/github/callback`;
-  const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${process.env.GITHUB_CLIENT_ID}&scope=read:user&redirect_uri=${encodeURIComponent(redirectUri)}`;
+  const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${process.env.GITHUB_CLIENT_ID}&scope=read:user&redirect_uri=${encodeURIComponent(redirectUri)}&state=${encodeURIComponent(devPulseToken)}`;
+
   res.redirect(githubAuthUrl);
 });
 
-// STEP 2 — GitHub redirects back here with a temporary code. Exchange
-// it for an access token, use that token to ask GitHub "who is this,
-// really" (this is the part that can't be faked), then mark that
-// GitHub username as verified in the database.
+// STEP 2 — GitHub sends back `code` (proves GitHub identity) AND our
+// own `state` (proves which DevPulse account asked for this). Both
+// have to check out before anything gets saved.
 app.get("/api/auth/github/callback", async (req, res) => {
   try {
-    const code = req.query.code;
-    if (!code) {
-      return res.redirect(`${process.env.FRONTEND_URL}/?verifyError=missing_code`);
+    const { code, state } = req.query;
+
+    if (!code || !state) {
+      return res.redirect(`${process.env.FRONTEND_URL}/?verifyError=missing_params`);
     }
+
+    // Re-verify the DevPulse token GitHub handed back to us — this is
+    // the step that actually links "this GitHub account" to "this
+    // specific logged-in DevPulse user", not just any browser session
+    let decoded;
+    try {
+      decoded = jwt.verify(state, process.env.JWT_SECRET);
+    } catch (err) {
+      return res.redirect(`${process.env.FRONTEND_URL}/?verifyError=session_expired`);
+    }
+
+    const devPulseUserId = decoded.id;
 
     const redirectUri = `${req.protocol}://${req.get("host")}/api/auth/github/callback`;
 
@@ -473,20 +509,18 @@ app.get("/api/auth/github/callback", async (req, res) => {
       return res.redirect(`${process.env.FRONTEND_URL}/?verifyError=token_failed`);
     }
 
-    // This is the trust-proving step — GitHub tells us the real
-    // logged-in username using the token that only that person's
-    // browser session could have obtained
     const githubUserResponse = await axios.get("https://api.github.com/user", {
       headers: { Authorization: `Bearer ${accessToken}` }
     });
 
     const githubUsername = githubUserResponse.data.login;
 
-    await VerifiedProfile.findOneAndUpdate(
-      { githubUsername: githubUsername.toLowerCase() },
-      { githubUsername: githubUsername.toLowerCase(), verifiedAt: new Date() },
-      { upsert: true }
-    );
+    // Save the GitHub identity onto THIS SPECIFIC DevPulse account —
+    // not as a free-floating fact
+    await User.findByIdAndUpdate(devPulseUserId, {
+      githubUsername: githubUsername.toLowerCase(),
+      githubVerifiedAt: new Date()
+    });
 
     res.redirect(`${process.env.FRONTEND_URL}/?verified=${githubUsername}`);
 
@@ -496,15 +530,18 @@ app.get("/api/auth/github/callback", async (req, res) => {
   }
 });
 
-// STEP 3 — any page (Dashboard, Portfolio) calls this to check whether
-// the username currently being viewed has ever verified itself
+// STEP 3 — any page checks whether the username currently being
+// viewed has a DevPulse account that verified it
 app.get("/api/verified/:username", async (req, res) => {
   try {
     const username = req.params.username.toLowerCase();
-    const record = await VerifiedProfile.findOne({ githubUsername: username });
+    const record = await User.findOne({
+      githubUsername: username,
+      githubVerifiedAt: { $ne: null }
+    });
     res.json({
       verified: !!record,
-      verifiedAt: record ? record.verifiedAt : null
+      verifiedAt: record ? record.githubVerifiedAt : null
     });
   } catch (error) {
     res.status(500).json({ error: error.message });

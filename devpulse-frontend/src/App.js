@@ -1,8 +1,10 @@
+
 // import { useState, useEffect } from "react";
 // import { Navigate } from "react-router-dom";
 // import axios from "axios";
 // import LanguageChart from "./components/LanguageChart";
 // import AchievementBadges from "./components/AchievementBadges";
+// import VerifiedBadge from "./components/VerifiedBadge";
 // import RepositoryHealth from "./components/RepositoryHealth";
 // import ActivityInsights from "./components/ActivityInsights";
 // import ContributionHeatmap from "./components/ContributionHeatmap";
@@ -33,6 +35,19 @@
 //   const [username, setUsername] = useState("");
 //   const [user, setUser] = useState(null);
 //   const [loading, setLoading] = useState(false);
+//   const [verifyConfirmation, setVerifyConfirmation] = useState(null);
+
+//   // Checks for ?verified=username coming back from the GitHub OAuth
+//   // redirect, shows a brief confirmation, then cleans the URL
+//   useEffect(() => {
+//     const params = new URLSearchParams(window.location.search);
+//     const verifiedUsername = params.get("verified");
+//     if (verifiedUsername) {
+//       setVerifyConfirmation(verifiedUsername);
+//       window.history.replaceState({}, "", window.location.pathname);
+//       setTimeout(() => setVerifyConfirmation(null), 5000);
+//     }
+//   }, []);
 //   const [error, setError] = useState("");
 //   const [contributions, setContributions] = useState({});
 //   const [cardTheme, setCardTheme] = useState("indigo");
@@ -170,6 +185,16 @@
 //                   ? "bg-[#0B0C10] text-slate-200"
 //                   : "bg-[#FAFAFB] text-slate-700"
 //               }`}>
+
+//                 {/* GitHub verification confirmation banner */}
+//                 {verifyConfirmation && (
+//                   <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[60] px-4 py-2.5 rounded-lg text-sm font-medium bg-indigo-500 text-white shadow-lg flex items-center gap-2">
+//                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+//                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+//                     </svg>
+//                     @{verifyConfirmation} is now verified on DevPulse
+//                   </div>
+//                 )}
 
 //                 {/* ── STEP 1: ONBOARDING SCREEN (if no user data is loaded) ── */}
 //                 {!user ? (
@@ -351,6 +376,20 @@
 
 //                           <button
 //                             onClick={() => {
+//                               window.location.href = `${API_URL}/auth/github/login`;
+//                             }}
+//                             className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors duration-200 ${
+//                               theme === "dark"
+//                                 ? "bg-white/5 border-white/10 text-indigo-400 hover:bg-white/10"
+//                                 : "bg-white border-slate-200 text-indigo-500 hover:bg-slate-50"
+//                             }`}
+//                             title="Prove ownership of your GitHub account via GitHub login"
+//                           >
+//                             Verify Profile
+//                           </button>
+
+//                           <button
+//                             onClick={() => {
 //                               setUser(null);
 //                               setUsername("");
 //                               setError("");
@@ -416,8 +455,9 @@
 //                                 className="w-16 h-16 rounded-full object-cover border border-indigo-500/30"
 //                               />
 //                               <div className="text-center md:text-left flex-1">
-//                                 <h2 className="text-lg font-semibold tracking-tight">
+//                                 <h2 className="text-lg font-semibold tracking-tight inline-flex items-center gap-1.5">
 //                                   {user.name}
+//                                   <VerifiedBadge username={user.username} theme={theme} />
 //                                 </h2>
 //                                 <p className="text-xs font-medium text-indigo-500">
 //                                   @{user.username}
@@ -641,6 +681,8 @@
 // export default App;
 
 
+
+
 import { useState, useEffect } from "react";
 import { Navigate } from "react-router-dom";
 import axios from "axios";
@@ -678,16 +720,33 @@ function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
   const [verifyConfirmation, setVerifyConfirmation] = useState(null);
+  const [verifyError, setVerifyError] = useState(null);
 
-  // Checks for ?verified=username coming back from the GitHub OAuth
-  // redirect, shows a brief confirmation, then cleans the URL
+  // Checks for ?verified=username or ?verifyError=... coming back from
+  // the GitHub OAuth redirect, shows a brief message, then cleans the URL
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const verifiedUsername = params.get("verified");
+    const error = params.get("verifyError");
+
     if (verifiedUsername) {
       setVerifyConfirmation(verifiedUsername);
       window.history.replaceState({}, "", window.location.pathname);
       setTimeout(() => setVerifyConfirmation(null), 5000);
+    }
+
+    if (error) {
+      const messages = {
+        not_logged_in: "Please log in to DevPulse before verifying your GitHub profile.",
+        invalid_session: "Your session expired — please log in again and retry.",
+        session_expired: "Verification took too long — please try again.",
+        missing_params: "Something went wrong with GitHub's response — please try again.",
+        token_failed: "GitHub didn't return an access token — please try again.",
+        server_error: "Something went wrong on our end — please try again."
+      };
+      setVerifyError(messages[error] || "Verification failed — please try again.");
+      window.history.replaceState({}, "", window.location.pathname);
+      setTimeout(() => setVerifyError(null), 6000);
     }
   }, []);
   const [error, setError] = useState("");
@@ -835,6 +894,13 @@ function App() {
                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                     </svg>
                     @{verifyConfirmation} is now verified on DevPulse
+                  </div>
+                )}
+
+                {/* GitHub verification error banner */}
+                {verifyError && (
+                  <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[60] px-4 py-2.5 rounded-lg text-sm font-medium bg-rose-500 text-white shadow-lg max-w-md text-center">
+                    {verifyError}
                   </div>
                 )}
 
@@ -1018,7 +1084,8 @@ function App() {
 
                           <button
                             onClick={() => {
-                              window.location.href = `${API_URL}/auth/github/login`;
+                              const devPulseToken = localStorage.getItem("token");
+                              window.location.href = `${API_URL}/auth/github/login?token=${encodeURIComponent(devPulseToken)}`;
                             }}
                             className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors duration-200 ${
                               theme === "dark"
